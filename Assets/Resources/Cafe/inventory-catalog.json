@@ -1,0 +1,96 @@
+{
+  "items": [
+    {
+      "id": "bean-geisha",
+      "name": "巴拿马瑰夏",
+      "category": "bean",
+      "unit": "g",
+      "flavorTendency": "通常偏花香和果香；实际表现随产地批次、烘焙及冲煮而变化，并非绝对保证。",
+      "containsMilk": false,
+      "allergenNote": "请核对实际产品及交叉接触信息。",
+      "initialQuantity": 500,
+      "priceUnitQuantity": 5,
+      "priceUnitCents": 350
+    },
+    {
+      "id": "bean-blue-mountain",
+      "name": "牙买加蓝山",
+      "category": "bean",
+      "unit": "g",
+      "flavorTendency": "通常偏柔和、均衡、坚果甜感；实际表现随批次、烘焙及冲煮而变化，并非绝对保证。",
+      "containsMilk": false,
+      "allergenNote": "坚果甜感是风味描述，不代表添加坚果；请核对实际产品信息。",
+      "initialQuantity": 500,
+      "priceUnitQuantity": 5,
+      "priceUnitCents": 300
+    },
+    {
+      "id": "bean-kona",
+      "name": "夏威夷科纳",
+      "category": "bean",
+      "unit": "g",
+      "flavorTendency": "通常偏柔和甜润、带轻微果酸；实际表现随批次、烘焙及冲煮而变化，并非绝对保证。",
+      "containsMilk": false,
+      "allergenNote": "请核对实际产品及交叉接触信息。",
+      "initialQuantity": 500,
+      "priceUnitQuantity": 5,
+      "priceUnitCents": 400
+    },
+    {
+      "id": "milk-whole",
+      "name": "全脂奶",
+      "category": "milk",
+      "unit": "ml",
+      "flavorTendency": "",
+      "containsMilk": true,
+      "allergenNote": "含牛奶。",
+      "initialQuantity": 2000,
+      "priceUnitQuantity": 100,
+      "priceUnitCents": 300
+    },
+    {
+      "id": "milk-skim",
+      "name": "脱脂奶",
+      "category": "milk",
+      "unit": "ml",
+      "flavorTendency": "",
+      "containsMilk": true,
+      "allergenNote": "含牛奶；脱脂不等于不含牛奶过敏原。",
+      "initialQuantity": 2000,
+      "priceUnitQuantity": 100,
+      "priceUnitCents": 350
+    },
+    {
+      "id": "milk-oat",
+      "name": "燕麦奶",
+      "category": "milk",
+      "unit": "ml",
+      "flavorTendency": "",
+      "containsMilk": false,
+      "allergenNote": "并非保证无过敏风险；须核对品牌配料、麸质及生产和制作过程中的交叉接触信息。",
+      "initialQuantity": 2000,
+      "priceUnitQuantity": 100,
+      "priceUnitCents": 400
+    },
+    {
+      "id": "soda-a",
+      "name": "汽水 A（暂定名）",
+      "category": "soda",
+      "unit": "瓶/罐",
+      "flavorTendency": "待实际产品确定。",
+      "containsMilk": false,
+      "allergenNote": "成分与过敏原待核实；false 不代表无过敏风险。",
+      "initialQuantity": 12
+    },
+    {
+      "id": "soda-b",
+      "name": "汽水 B（暂定名）",
+      "category": "soda",
+      "unit": "瓶/罐",
+      "flavorTendency": "待实际产品确定。",
+      "containsMilk": false,
+      "allergenNote": "成分与过敏原待核实；false 不代表无过敏风险。",
+      "initialQuantity": 12
+    }
+  ]
+}

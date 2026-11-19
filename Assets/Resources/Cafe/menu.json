@@ -1,0 +1,64 @@
+{
+  "blackCoffeeWaterIceFeeCents": 300,
+  "largeCupSurchargeCents": 200,
+  "items": [
+    {
+      "id": "black-blue-mountain",
+      "name": "蓝山黑咖啡",
+      "recipeId": "black-coffee",
+      "beanIds": [
+        "bean-blue-mountain"
+      ],
+      "milkIds": [],
+      "cupSizesMl": [
+        400,
+        500
+      ]
+    },
+    {
+      "id": "black-geisha",
+      "name": "瑰夏黑咖啡",
+      "recipeId": "black-coffee",
+      "beanIds": [
+        "bean-geisha"
+      ],
+      "milkIds": [],
+      "cupSizesMl": [
+        400,
+        500
+      ]
+    },
+    {
+      "id": "black-kona",
+      "name": "科纳黑咖啡",
+      "recipeId": "black-coffee",
+      "beanIds": [
+        "bean-kona"
+      ],
+      "milkIds": [],
+      "cupSizesMl": [
+        400,
+        500
+      ]
+    },
+    {
+      "id": "latte",
+      "name": "拿铁",
+      "recipeId": "latte",
+      "beanIds": [
+        "bean-blue-mountain",
+        "bean-geisha",
+        "bean-kona"
+      ],
+      "milkIds": [
+        "milk-whole",
+        "milk-skim",
+        "milk-oat"
+      ],
+      "cupSizesMl": [
+        400,
+        500
+      ]
+    }
+  ]
+}
