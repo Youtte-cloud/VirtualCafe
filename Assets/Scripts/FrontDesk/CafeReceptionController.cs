@@ -9,15 +9,16 @@ public sealed class CafeReceptionController : MonoBehaviour
     public GameObject recommendationPanel;
     public CafeMenuSceneAdapter menuAdapter;
     public CafeProductHighlighter highlighter;
+    public bool autoBeginReception = true;
 
-    // ¹©×éÔ±Á¬½Ó²Ëµ¥ºÍAIÄ£¿é¡£
+    // ä¾›ç»„å‘˜è¿æ¥èœå•å’ŒAIæ¨¡å—ã€‚
     public UnityEvent OrderOpened = new UnityEvent();
     public UnityEvent RecommendationOpened = new UnityEvent();
     public UnityEvent ReceptionEnded = new UnityEvent();
 
     private void Start()
     {
-        BeginReception();
+        if (autoBeginReception) BeginReception();
     }
 
     private void HidePanels()
@@ -40,7 +41,7 @@ public sealed class CafeReceptionController : MonoBehaviour
         if (highlighter) highlighter.ClearHighlight();
         if (orderPanel) orderPanel.SetActive(true);
 
-        // Ö»²éÑ¯±¨¼ÛºÍ¿â´æ£¬²»¿Û¿â´æ¡£
+        // åªæŸ¥è¯¢æŠ¥ä»·å’Œåº“å­˜ï¼Œä¸æ‰£åº“å­˜ã€‚
         if (menuAdapter) menuAdapter.RefreshDisplay();
 
         OrderOpened.Invoke();
