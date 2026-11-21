@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using VirtualCafe.Recommendation;
@@ -56,8 +56,11 @@ namespace VirtualCafe.Player
             if (Input.GetKeyDown(KeyCode.F))
             {
                 if (UiMode) { if (terminal) terminal.EndPlayerInteraction(); SetUiMode(false); }
-                else if (!IsSeated && terminal && terminal.IsInterfaceVisible)
+                else if (!IsSeated && terminal && terminal.TryOpenInteraction())
+                {
                     SetUiMode(true);
+                    return; // Do not apply movement or mouse-look on the opening frame.
+                }
             }
             if (UiMode) return;
             float dx = Input.GetAxis("Mouse X") * lookSensitivity;
@@ -145,6 +148,8 @@ namespace VirtualCafe.Player
             var style = new GUIStyle(GUI.skin.box) { font = font, fontSize = 18, alignment = TextAnchor.MiddleCenter };
             style.wordWrap = true;
             string hint = UiMode ? "鼠标操作 · Esc 继续行走" : IsSeated ? "E 起身 · 鼠标环顾" : nearbySeat ? "E 坐下 · WASD 移动" : "WASD 移动 · 鼠标环顾 · 靠近前台点单";
+            if (!UiMode && terminal && terminal.CanOpenInteraction)
+                hint = "F 与店员交谈 · WASD 移动";
             float width = Mathf.Min(440, Screen.width - 20);
             GUI.Box(new Rect(10, Screen.height - 65, width, 55), string.IsNullOrEmpty(notice) ? hint : notice, style);
             if (!UiMode) GUI.Label(new Rect(Screen.width / 2 - 5, Screen.height / 2 - 10, 20, 20), "+");

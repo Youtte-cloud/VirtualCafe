@@ -46,14 +46,8 @@ namespace VirtualCafe.UI
         }
 
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Boot()
-        {
-            if (FindObjectOfType<CafeUIPrototype>() != null) return;
-            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-            if (scene.name != "CafeMain") return;
-            new GameObject("Cafe UI Prototype (D)").AddComponent<CafeUIPrototype>();
-        }
+        // Legacy MOCK UI is opt-in only. Add this component explicitly in a test
+        // scene if needed; never spawn it automatically in the shared CafeMain.
         void Awake()
         {
             font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
