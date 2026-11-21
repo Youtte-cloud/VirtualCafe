@@ -19,6 +19,8 @@ namespace VirtualCafe.Player
         private float pitch, verticalSpeed;
         private string notice = "";
         private Font font;
+        private Canvas controlsCanvas;
+        private Text controlsText;
         public CharacterController Motor => motor;
         private void Start()
         {
@@ -46,11 +48,11 @@ namespace VirtualCafe.Player
         }
         private void Update()
         {
+            UpdateControlsHint();
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                bool nextMode = !UiMode;
-                if (!nextMode && terminal) terminal.EndPlayerInteraction();
-                SetUiMode(nextMode); return;
+                if (terminal && terminal.IsInterfaceVisible) terminal.EndPlayerInteraction();
+                SetUiMode(false); return; // Escape must never open an invisible UI mode.
             }
             if (Typing()) return;
             if (Input.GetKeyDown(KeyCode.F))
@@ -139,19 +141,48 @@ namespace VirtualCafe.Player
         private void OnApplicationFocus(bool focus) { if (!focus) SetUiMode(true); }
         private void OnDisable()
         {
+            if (controlsCanvas) controlsCanvas.enabled = false;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
             if (seat) { seat.Occupied = false; seat = null; }
         }
-        private void OnDestroy() { if (font) Destroy(font); }
+        private void OnDestroy() { if (controlsCanvas) Destroy(controlsCanvas.gameObject); if (font) Destroy(font); }
+        private void UpdateControlsHint()
+        {
+            if (!controlsCanvas)
+            {
+                var hud = new GameObject("Player controls HUD", typeof(Canvas), typeof(CanvasScaler));
+                controlsCanvas = hud.GetComponent<Canvas>();
+                controlsCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                controlsCanvas.sortingOrder = 32000;
+                var scale = hud.GetComponent<CanvasScaler>();
+                scale.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scale.referenceResolution = new Vector2(1280, 720);
+                scale.matchWidthOrHeight = .5f;
+                var box = new GameObject("Controls", typeof(RectTransform), typeof(Image));
+                box.transform.SetParent(hud.transform, false);
+                var rect = box.GetComponent<RectTransform>();
+                rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.zero;
+                rect.anchoredPosition = new Vector2(16, 14); rect.sizeDelta = new Vector2(600, 48);
+                box.GetComponent<Image>().color = new Color(.15f,.12f,.09f,.88f);
+                box.GetComponent<Image>().raycastTarget = false;
+                var label = new GameObject("Hint", typeof(RectTransform), typeof(Text));
+                label.transform.SetParent(box.transform, false); controlsText = label.GetComponent<Text>();
+                var t = controlsText.rectTransform;t.anchorMin=Vector2.zero;t.anchorMax=Vector2.one;
+                t.offsetMin=new Vector2(14,4);t.offsetMax=new Vector2(-14,-4);
+                controlsText.font=font;controlsText.fontSize=17;controlsText.color=new Color(1,.97f,.90f);
+                controlsText.alignment=TextAnchor.MiddleLeft;controlsText.raycastTarget=false;
+            }
+            controlsCanvas.enabled = isActiveAndEnabled;
+            string hint = UiMode ? "Mouse: select / Esc: close and walk" :
+                IsSeated ? "E: stand up / Mouse: look around" :
+                nearbySeat ? "E: sit / WASD: move / Mouse: look" :
+                "WASD: move / Mouse: look / Approach the counter";
+            if (!UiMode && terminal && terminal.CanOpenInteraction)
+                hint = "F: talk to the assistant / WASD: move";
+            controlsText.text = string.IsNullOrEmpty(notice) ? hint : "Not enough room to stand. Please try again.";
+        }
         private void OnGUI()
         {
-            var style = new GUIStyle(GUI.skin.box) { font = font, fontSize = 18, alignment = TextAnchor.MiddleCenter };
-            style.wordWrap = true;
-            string hint = UiMode ? "鼠标操作 · Esc 继续行走" : IsSeated ? "E 起身 · 鼠标环顾" : nearbySeat ? "E 坐下 · WASD 移动" : "WASD 移动 · 鼠标环顾 · 靠近前台点单";
-            if (!UiMode && terminal && terminal.CanOpenInteraction)
-                hint = "F 与店员交谈 · WASD 移动";
-            float width = Mathf.Min(440, Screen.width - 20);
-            GUI.Box(new Rect(10, Screen.height - 65, width, 55), string.IsNullOrEmpty(notice) ? hint : notice, style);
             if (!UiMode) GUI.Label(new Rect(Screen.width / 2 - 5, Screen.height / 2 - 10, 20, 20), "+");
         }
     }
