@@ -21,6 +21,9 @@ namespace VirtualCafe.Recommendation
         private bool greeted;
         public bool IsInterfaceVisible => root && root.gameObject.activeSelf;
         public string InteractionState => mode;
+        // 提供给原料模型展示读取。
+        public bool IsBeanChosen => beanChosen;
+        public bool IsMilkChosen => milkChosen;
         private RectTransform root;
         private Font font;
         private InputField input;
