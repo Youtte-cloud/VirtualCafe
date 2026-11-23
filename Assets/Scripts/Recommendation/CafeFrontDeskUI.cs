@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -219,7 +219,7 @@ namespace VirtualCafe.Recommendation
         }
         private void Build()
         {
-            root.sizeDelta = new Vector2(800, mode == "order" ? 830 : 1040);
+            root.sizeDelta = new Vector2(800, mode == "order" ? 930 : 1140);
             Clear();
             Label(root, mode == "order" ? "Our menu" : "Find your favourite", 25, 16, 515, 55, 34);
             MakeButton(root, "Back", 560, 20, 100, 48, ShowWelcome);
@@ -278,12 +278,12 @@ namespace VirtualCafe.Recommendation
                 }
                 RefreshMenuOffers();
             }
-            status = Label(root, "", 25, mode == "order" ? 285 : 450, 750, 60, 22);
-            float summaryY = mode == "order" ? 360 : 520;
-            float configY = mode == "order" ? 450 : 610;
+            status = Label(root, "", 25, mode == "order" ? 278 : 450, 750, mode == "order" ? 38 : 60, 22);
+            float summaryY = mode == "order" ? 318 : 520;
+            float configY = mode == "order" ? 400 : 610;
             selectionText = Label(root, "", 30, summaryY, 740, 75, 24);
-            options = Box(root, "Configuration", 30, configY, 740, 270);
-            confirm = MakeButton(root, "Confirm order (demo)", 30, configY + 290, 740, 56, Purchase);
+            options = Box(root, "Configuration", 30, configY, 740, 430);
+            confirm = MakeButton(root, "Confirm order (demo)", 30, configY + 440, 740, 56, Purchase);
             dirty = true;
         }
         private void RefreshDialogue()
@@ -438,7 +438,7 @@ namespace VirtualCafe.Recommendation
                 ConfigureAvailability(button, candidate, "Cup size " + size + "ml", "cup", unavailableReasons);
                 configurationButtons.Add(button); x += 166;
             }
-            Label(options, "Coffee bean", 0, 68, 90, 48, 18).alignment = TextAnchor.MiddleLeft;
+            Label(options, "Beans", 0, 68, 90, 48, 22).alignment = TextAnchor.MiddleLeft;
             x = 100;
             string activeBean = string.IsNullOrEmpty(s.BeanId) ? item.beanIds[0] : s.BeanId;
             foreach (string bean in item.beanIds)
@@ -490,11 +490,48 @@ namespace VirtualCafe.Recommendation
                     configurationButtons.Add(button); x += 215;
                 }
             }
+            DrawRecipe(s, item);
             if (unavailableReasons.Count > 0)
             {
-                var reasonText = Label(options, string.Join("; ", unavailableReasons), 0, 192, 740, 85, 18);
-                reasonText.color = new Color(.60f, .25f, .17f);
+                var reasonText = Label(options, "Sold out: " + string.Join(", ", unavailableReasons) + ". Other available options can still be ordered.", 0, 374, 740, 52, 18);
+                reasonText.color = new Color(.47f, .38f, .28f);
             }
+        }
+        private void DrawRecipe(MenuSelection selection, CafeMenuItem item)
+        {
+            var card = Box(options, "Recipe amounts", 0, 206, 740, 156);
+            card.gameObject.AddComponent<Image>().color = new Color(.95f, .90f, .81f);
+            var heading = Label(card, "RECIPE / PER CUP", 20, 14, 700, 28, 18);
+            heading.fontStyle = FontStyle.Bold;
+            if (CafeUiSelectionRules.MissingOptions(selection, item, cupChosen, beanChosen, milkChosen).Length > 0)
+            {
+                Label(card, "Complete your size, bean and milk choices to see the recipe.", 20, 58, 700, 70, 22);
+                return;
+            }
+            if (!CafeRuntimeServices.Menu.TryGetRecipe(selection, out var recipe, out _))
+            {
+                Label(card, "Recipe details are unavailable for this selection.", 20, 58, 700, 70, 22);
+                return;
+            }
+            // Definitions and quantities come from the same read-only service as pricing.
+            var ingredients = new List<string>();
+            foreach (var requirement in recipe.requirements)
+            {
+                string id = requirement.source == "bean"
+                    ? (string.IsNullOrEmpty(selection.BeanId) ? item.beanIds[0] : selection.BeanId)
+                    : requirement.source == "milk" ? selection.MilkId : requirement.itemId;
+                var definition = CafeRuntimeServices.Inventory.GetItemDefinition(id);
+                ingredients.Add(DisplayEnglish(definition.name) + "  " + requirement.quantity + " " + definition.unit);
+            }
+            // Two columns keep bean and milk amounts readable without a dense sentence.
+            Label(card, ingredients.Count > 0 ? ingredients[0] : "", 20, 52, 340, 48, 23);
+            Label(card, ingredients.Count > 1 ? string.Join(" / ", ingredients.GetRange(1, ingredients.Count - 1)) : "No milk", 380, 52, 340, 48, 23);
+            var preparation = new List<string>();
+            if (recipe.extractionTargetG > 0) preparation.Add("Espresso yield " + recipe.extractionTargetG + " g");
+            if (recipe.waterMl > 0) preparation.Add("Water " + recipe.waterMl + " ml");
+            if (recipe.iceG > 0) preparation.Add("Ice " + recipe.iceG + " g");
+            var targets = Label(card, string.Join("  /  ", preparation), 20, 110, 700, 32, 18);
+            targets.color = new Color(.47f, .38f, .28f);
         }
         private static MenuSelection CopySelection(MenuSelection s) => new MenuSelection {
             MenuItemId = s.MenuItemId, CupSizeMl = s.CupSizeMl,
@@ -512,7 +549,7 @@ namespace VirtualCafe.Recommendation
             MarkSelected(button, false);
             var label = button.GetComponentInChildren<Text>();
             label.text += "\nSold out"; label.fontSize = 17;
-            string detail = name + " has no available combination";
+            string detail = name;
             if (!reasons.Contains(detail)) reasons.Add(detail);
         }
         private void RefreshMenuOffers()
