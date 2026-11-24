@@ -4,7 +4,7 @@
   "items": [
     {
       "id": "black-blue-mountain",
-      "name": "蓝山黑咖啡",
+      "name": "Blue Mountain Black Coffee",
       "recipeId": "black-coffee",
       "beanIds": [
         "bean-blue-mountain"
@@ -17,7 +17,7 @@
     },
     {
       "id": "black-geisha",
-      "name": "瑰夏黑咖啡",
+      "name": "Geisha Black Coffee",
       "recipeId": "black-coffee",
       "beanIds": [
         "bean-geisha"
@@ -30,7 +30,7 @@
     },
     {
       "id": "black-kona",
-      "name": "科纳黑咖啡",
+      "name": "Kona Black Coffee",
       "recipeId": "black-coffee",
       "beanIds": [
         "bean-kona"
@@ -43,7 +43,7 @@
     },
     {
       "id": "latte",
-      "name": "拿铁",
+      "name": "Latte",
       "recipeId": "latte",
       "beanIds": [
         "bean-blue-mountain",

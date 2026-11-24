@@ -12,6 +12,7 @@
 /[Uu]ser[Ss]ettings/
 # Local LLM credentials (also covers standalone local config copied into the repository).
 CafeLLM.local.json
+CafeSpeech.local.json
 *.log
 
 # MemoryCaptures can get excessive in size.

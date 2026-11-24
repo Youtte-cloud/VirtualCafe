@@ -32,11 +32,20 @@ namespace VirtualCafe.Recommendation
         public string ErrorText { get; private set; } = "";
         public string LastTracePath { get; private set; }
         public CafeOrderReceipt LastConfirmedOrder { get; private set; }
+        public string ConversationLanguage { get; private set; } = "";
+        public void SetConversationLanguage(string language)
+        {
+            ConversationLanguage = language == "zh-CN" || language == "en-US" || language == "ja-JP" ? language : "";
+        }
         public void NotifyConfirmedOrder(CafeOrderReceipt receipt)
         {
             if (receipt == null || string.IsNullOrEmpty(receipt.pickupNumber)) return;
             LastConfirmedOrder = receipt;
-            ReplyText = receipt.ClerkMessage;
+            ReplyText = ConversationLanguage == "zh-CN"
+                ? "点单已确认，取餐号是 " + receipt.pickupNumber + "。请保留号码，取餐时出示。"
+                : ConversationLanguage == "ja-JP"
+                ? "ご注文が確定しました。受取番号は " + receipt.pickupNumber + " です。お受け取りの際にこの番号をご提示ください。"
+                : receipt.ClerkMessage;
             ReplyChanged.Invoke(ReplyText);
         }
         private readonly List<ChatMessage> history = new List<ChatMessage>();
@@ -57,7 +66,9 @@ namespace VirtualCafe.Recommendation
             lastProduct = null;
             firstPreference = null;
             CurrentRecommendation = null;
-            ReplyText = "你好呀！今天想喝点什么？口味、奶种或预算都可以告诉我。";
+            ReplyText = ConversationLanguage == "en-US" ? "Hello! What would you like? Tell me your taste, milk preference or budget."
+                : ConversationLanguage == "ja-JP" ? "いらっしゃいませ！お好みの味、ミルク、ご予算を教えてください。"
+                : "你好呀！今天想喝点什么？口味、奶种或预算都可以告诉我。";
             ReplyChanged.Invoke(ReplyText);
             SetError("");
         }
@@ -126,6 +137,9 @@ namespace VirtualCafe.Recommendation
             try
             {
                 var messages = new List<ChatMessage> { new ChatMessage("system", CafeRecommendationProtocol.SystemPrompt) };
+                if (!string.IsNullOrEmpty(ConversationLanguage))
+                    messages.Add(new ChatMessage("system", "Conversation language selected by the customer: " + ConversationLanguage +
+                        ". Write all customer-facing reply and followUp text in this language, including replies to transcribed speech. Keep the required JSON schema, selection IDs, menu facts and purchase confirmation rules unchanged."));
                 messages.AddRange(history);
                 messages.Add(new ChatMessage("user", JsonUtility.ToJson(new RequestContext {
                     snapshot = JsonUtility.FromJson<MenuRecommendationSnapshot>(CafeRuntimeServices.Menu.GetRecommendationSnapshotJson()),

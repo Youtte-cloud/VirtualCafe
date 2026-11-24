@@ -15,6 +15,15 @@ namespace VirtualCafe.Recommendation
         public CafeReceptionController reception;
         public CafeRecommendationController recommendation;
         public Camera customerCamera;
+        [Header("Voice conversation")]
+        [Tooltip("Optional: drag the robot head here. Otherwise a barista model is detected at runtime.")]
+        public Transform baristaSpeechAnchor;
+        public Transform customerSpeechAnchor;
+        private CafeSpeechConversation speech;
+        private CafeBaristaBubble speechBubble;
+        private CafeBaristaBubble customerBubble;
+        private Button microphoneButton;
+        private Text speechStatus;
         [Header("Order animation")]
         public CafeOrderAnimation orderAnimation;
         public float completionDisplaySeconds = 3f;
@@ -62,6 +71,7 @@ namespace VirtualCafe.Recommendation
         public void EndPlayerInteraction()
         {
             if (!root || mode == "closed" || purchasing) return;
+            StopVoice();
             if (input) draft = input.text;
             recommendation.CancelSession();
             reception.EndReception();
@@ -109,6 +119,28 @@ namespace VirtualCafe.Recommendation
             if (old) old.enabled = false;
             if (!FindObjectOfType<EventSystem>()) new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", "Arial" }, 24);
+            speech = GetComponent<CafeSpeechConversation>();
+            if (!speech) speech = gameObject.AddComponent<CafeSpeechConversation>();
+            speech.Recognized.AddListener(OnSpeechRecognized);
+            speech.PreviewChanged.AddListener(OnSpeechPreview);
+            speechBubble = gameObject.AddComponent<CafeBaristaBubble>();
+            speechBubble.Initialize(customerCamera, font);
+            customerBubble = gameObject.AddComponent<CafeBaristaBubble>();
+            customerBubble.Initialize(customerCamera, font, true);
+            customerBubble.baristaAnchor = customerSpeechAnchor;
+            speechBubble.baristaAnchor = baristaSpeechAnchor;
+            speechBubble.fallbackPosition = receptionCenter + new Vector3(0, 1.8f, 1.3f);
+            if (!speechBubble.baristaAnchor)
+                foreach (var renderer in FindObjectsOfType<SkinnedMeshRenderer>())
+                {
+                    string path = renderer.name.ToLowerInvariant();
+                    for (Transform t = renderer.transform.parent; t; t = t.parent) path += "/" + t.name.ToLowerInvariant();
+                    if (!path.Contains("mugi") && !path.Contains("barista") && !path.Contains("robot")) continue;
+                    var head = new GameObject("SpeechAnchor").transform;
+                    head.SetParent(renderer.transform, true);
+                    head.position = new Vector3(renderer.bounds.center.x, renderer.bounds.max.y, renderer.bounds.center.z);
+                    speechBubble.baristaAnchor = head; break;
+                }
             var go = new GameObject("FrontDeskTerminal", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
             go.transform.SetParent(customerCamera.transform, false);
             TerminalCanvas = go.GetComponent<Canvas>();
@@ -150,6 +182,9 @@ namespace VirtualCafe.Recommendation
         }
         private void OnDestroy()
         {
+            if (speech) { speech.Recognized.RemoveListener(OnSpeechRecognized); speech.PreviewChanged.RemoveListener(OnSpeechPreview); speech.Cancel(); }
+            if (speechBubble) Destroy(speechBubble);
+            if (customerBubble) Destroy(customerBubble);
             if (recommendation)
             {
                 recommendation.ReplyChanged.RemoveListener(OnReply);
@@ -162,11 +197,78 @@ namespace VirtualCafe.Recommendation
             if (TerminalCanvas) Destroy(TerminalCanvas.gameObject);
         }
         private void InventoryChanged() { dirty = true; RefreshMenuOffers(); }
-        private void OnReply(string value) { if (mode != "recommendation") return; if (value == "你好呀！今天想喝点什么？口味、奶种或预算都可以告诉我。") value = "Hello! Tell me your taste, milk preference or budget."; messages.Add("Assistant: " + value); if (messages.Count > 12) messages.RemoveAt(0); RefreshDialogue(); }
+        private void OnReply(string value)
+        {
+            if (mode != "recommendation") return;
+            if (speech && speech.Active) speechBubble.Show(value);
+            else if (value == "你好呀！今天想喝点什么？口味、奶种或预算都可以告诉我。") value = "Hello! Tell me your taste, milk preference or budget.";
+            messages.Add("Assistant: " + value);
+            if (messages.Count > 12) messages.RemoveAt(0);
+            RefreshDialogue();
+        }
+        private void StopVoice()
+        {
+            if (speech) speech.Cancel();
+            if (speechBubble) speechBubble.Hide();
+            if (customerBubble) customerBubble.Hide();
+            if (recommendation) recommendation.SetConversationLanguage("");
+        }
+        private void OnSpeechRecognized(string text)
+        {
+            if (mode != "recommendation" || !speech.Active || recommendation.IsBusy || purchasing) return;
+            if (input) input.text = text;
+            draft = text;
+            Submit(false);
+        }
+        private void OnSpeechPreview(string text)
+        {
+            if (mode != "recommendation" || !speech.Active) return;
+            customerBubble.Show(text);
+        }
+        public void StartVoiceConversation(int languageIndex)
+        {
+            if (purchasing || !root) return;
+            recommendation.CancelSession(); speech.Activate(languageIndex);
+            recommendation.SetConversationLanguage(speech.Language);
+            mode = "recommendation"; messages.Clear(); purchased = false; currentReceipt = null;
+            reception.OpenRecommendation(); Build(); recommendation.BeginSession();
+        }
+        private void ShowVoiceLanguages()
+        {
+            StopVoice(); recommendation.CancelSession(); Clear(); mode = "languages";
+            root.gameObject.SetActive(true); TerminalCanvas.enabled = true;
+            if (player) player.SetUiMode(true);
+            SetPointerInteraction(true);
+            root.sizeDelta = new Vector2(800, 480);
+            Label(root, "Choose your spoken language / 选择对话语言", 35, 35, 730, 90, 30);
+            for (int i = 0; i < CafeSpeechConversation.Languages.Length; i++)
+            {
+                int index = i;
+                MakeButton(root, CafeSpeechConversation.LanguageNames[i], 40 + i * 245, 160, 230, 80, () => StartVoiceConversation(index));
+            }
+            Label(root, "点击麦克风录音，再次点击结束并识别（最长30秒）。店员只用文字回复。\n默认使用百炼 Qwen-ASR；这里选择识别与店员回复语言。", 40, 270, 720, 100, 24);
+            MakeButton(root, "Back", 40, 390, 200, 55, ShowWelcome);
+        }
+        private void OpenSpeechSettings()
+        {
+            if (speech.provider == CafeSpeechConversation.RecognitionProvider.Windows)
+            {
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+                Application.OpenURL("ms-settings:privacy-speech");
+#endif
+                return;
+            }
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.ExecuteMenuItem("Virtual Cafe/Speech Settings");
+#else
+            if (speechStatus) speechStatus.text = "Configure CafeSpeech.local.json in the application data folder, then try again.";
+#endif
+        }
         private void OnError(string value) { if (mode == "recommendation" && status) status.text = DisplayEnglish(value); }
         private void OnSelection(MenuSelection value) { if (mode != "recommendation" || value == null) return; beanChosen = cupChosen = milkChosen = true; beanChoiceProduct = value.MenuItemId; purchased = false; currentReceipt = null; dirty = true; }
         private void Clear()
         {
+            microphoneButton = null; speechStatus = null;
             if (input) draft = input.text;
             foreach (Transform child in root) { child.gameObject.SetActive(false); Destroy(child.gameObject); }
             configurationButtons.Clear(); menuButtons.Clear(); optionAvailability.Clear();
@@ -178,6 +280,7 @@ namespace VirtualCafe.Recommendation
         public void ShowWelcome()
         {
             if (!root || purchasing) return;
+            StopVoice();
             root.gameObject.SetActive(true);
             TerminalCanvas.enabled = true;
             root.sizeDelta = new Vector2(800, 800);
@@ -191,6 +294,7 @@ namespace VirtualCafe.Recommendation
             MakeButton(root, "Help me choose", 60, 290, 680, 84, OpenRecommendation);
             MakeButton(root, "Order from the menu", 60, 405, 680, 84, OpenOrder);
             MakeButton(root, "Maybe later", 60, 520, 680, 84, EndPlayerInteraction);
+            MakeButton(root, "Voice conversation / 语音点单", 60, 625, 680, 56, ShowVoiceLanguages);
             Label(root, "Choose an option / Esc to close and walk", 60, 690, 680, 60, 22);
         }
         public void EvaluateReception(Vector3 position, bool seated)
@@ -210,11 +314,12 @@ namespace VirtualCafe.Recommendation
             mode = "prompt";
             root.gameObject.SetActive(true);
             TerminalCanvas.enabled = true;
-            root.sizeDelta = new Vector2(640, 300);
+            root.sizeDelta = new Vector2(640, 400);
             Clear();
             Label(root, "Welcome! Would you like a coffee?", 25, 25, 590, 85, 32);
             MakeButton(root, "Yes, please", 25, 150, 285, 85, AcceptReception);
             MakeButton(root, "No, just browsing", 330, 150, 285, 85, EndPlayerInteraction);
+            MakeButton(root, "Voice conversation / 语音点单", 25, 265, 590, 70, ShowVoiceLanguages);
             if (player) player.SetUiMode(true);
             SetPointerInteraction(true);
         }
@@ -228,20 +333,23 @@ namespace VirtualCafe.Recommendation
         public void OpenRecommendation()
         {
             if (purchasing) return;
+            StopVoice();
             mode = "recommendation"; messages.Clear(); purchased = false; currentReceipt = null;
             reception.OpenRecommendation(); Build(); recommendation.BeginSession();
         }
         public void OpenOrder()
         {
             if (purchasing) return;
+            StopVoice();
             beanChosen = cupChosen = milkChosen = true;
             mode = "order"; recommendation.CancelSession(); reception.OpenOrder(); purchased = false; currentReceipt = null; Build();
         }
         private void Build()
         {
-            root.sizeDelta = new Vector2(800, mode == "order" ? 930 : 1140);
+            bool voiceMode = speech && speech.Active;
+            root.sizeDelta = new Vector2(800, mode == "order" ? 930 : voiceMode ? 1290 : 1140);
             Clear();
-            Label(root, mode == "order" ? "Our menu" : "Find your favourite", 25, 16, 515, 55, 34);
+            Label(root, mode == "order" ? "Our menu" : voiceMode ? "Voice / " + CafeSpeechConversation.LanguageNames[speech.LanguageIndex] : "Find your favourite", 25, 16, 515, 55, 34);
             MakeButton(root, "Back", 560, 20, 100, 48, ShowWelcome);
             MakeButton(root, "Close", 675, 20, 100, 48, EndPlayerInteraction);
             if (mode == "recommendation")
@@ -283,6 +391,15 @@ namespace VirtualCafe.Recommendation
                 MakeButton(root, "Retry", 25, 397, 150, 48, () => recommendation.Retry());
                 MakeButton(root, "View menu", 190, 397, 180, 48, OpenOrder);
                 RefreshDialogue();
+                if (voiceMode)
+                {
+                    microphoneButton = MakeButton(root, "Speak / 说话", 25, 515, 240, 55, () => {
+                        if (!recommendation.IsBusy) speech.ToggleRecording();
+                    });
+                    MakeButton(root, "Language / 语言", 280, 515, 240, 55, ShowVoiceLanguages);
+                    MakeButton(root, speech.provider == CafeSpeechConversation.RecognitionProvider.Windows ? "Windows / 语音设置" : speech.provider == CafeSpeechConversation.RecognitionProvider.Aliyun ? "百炼 / 语音设置" : "Azure / 语音设置", 535, 515, 240, 55, OpenSpeechSettings);
+                    speechStatus = Label(root, "", 25, 575, 750, 65, 21);
+                }
             }
             else
             {
@@ -299,8 +416,8 @@ namespace VirtualCafe.Recommendation
                 RefreshMenuOffers();
             }
             status = Label(root, "", 25, mode == "order" ? 278 : 450, 750, mode == "order" ? 38 : 60, 22);
-            float summaryY = mode == "order" ? 318 : 520;
-            float configY = mode == "order" ? 400 : 610;
+            float summaryY = mode == "order" ? 318 : voiceMode ? 650 : 520;
+            float configY = mode == "order" ? 400 : voiceMode ? 740 : 610;
             selectionText = Label(root, "", 30, summaryY, 740, 75, 24);
             options = Box(root, "Configuration", 30, configY, 740, 430);
             confirm = MakeButton(root, "Confirm order (demo)", 30, configY + 440, 740, 56, Purchase);
@@ -314,7 +431,10 @@ namespace VirtualCafe.Recommendation
         }
         private void Submit(bool alternate)
         {
+            if (speech && speech.Active && speech.IsBusy) return;
             if (recommendation.IsBusy || (!alternate && string.IsNullOrWhiteSpace(input.text))) return;
+            if (speech && speech.Active && customerBubble)
+                customerBubble.Show(alternate ? "保留我的偏好，换一杯。" : input.text);
             messages.Add("You: " + (alternate ? "Keep my preferences and suggest a different drink." : input.text));
             purchased = false; currentReceipt = null; RefreshDialogue();
             if (alternate) recommendation.RecommendAnother(); else recommendation.Submit(input.text);
@@ -323,7 +443,7 @@ namespace VirtualCafe.Recommendation
         private void Purchase()
         {
             if (purchased || purchasing || validationPopup ||
-                recommendation.IsBusy ||
+                recommendation.IsBusy || (speech && speech.Active && speech.IsBusy) ||
                 (mode != "order" && mode != "recommendation"))
                 return;
 
@@ -466,10 +586,23 @@ namespace VirtualCafe.Recommendation
         private void Update()
         {
             if (!player) player = FindObjectOfType<CafeDesktopPlayer>();
+            if (customerBubble && player && !customerSpeechAnchor)
+                customerBubble.fallbackPosition = player.transform.position + Vector3.up * 1.95f;
             if (player) EvaluateReception(player.transform.position, player.IsSeated);
             if (purchasing) return;
             if (mode != "order" && mode != "recommendation") return;
-            bool busy = recommendation.IsBusy;
+            bool voiceBusy = speech && speech.Active && speech.IsBusy;
+            bool busy = recommendation.IsBusy || voiceBusy;
+            if (microphoneButton)
+            {
+                microphoneButton.interactable = !recommendation.IsBusy && (!speech.IsBusy || speech.IsRecording);
+                microphoneButton.GetComponentInChildren<Text>().text = speech.IsRecording ? "Send / 结束并发送" : "Speak / 说话";
+            }
+            if (speechStatus)
+            {
+                speechStatus.text = speech.Status;
+                speechStatus.color = speech.NeedsConfiguration ? new Color(.75f, .18f, .1f) : new Color(.23f, .16f, .11f);
+            }
             bool selected = mode == "order" || recommendation.CurrentRecommendation != null;
             if (busy != wasBusy || selected != hadRecommendation) dirty = true;
             wasBusy = busy; hadRecommendation = selected;
@@ -495,7 +628,13 @@ namespace VirtualCafe.Recommendation
             if (available.x <= 0 || available.y <= 0) return;
             float fit = Mathf.Min(1, available.x / root.sizeDelta.x, available.y / root.sizeDelta.y);
             root.localScale = Vector3.one * fit;
-            root.anchoredPosition = Vector2.zero;
+            if (speech && speech.Active)
+            {
+                fit = Mathf.Min(fit, canvasRect.rect.width * .52f / root.sizeDelta.x);
+                root.localScale = Vector3.one * fit;
+                root.anchoredPosition = new Vector2(-canvasRect.rect.width * .22f, 0);
+            }
+            else root.anchoredPosition = Vector2.zero;
             root.localRotation = Quaternion.identity;
             if (scrollToLatest && chatScroll && chatScroll.gameObject.activeInHierarchy)
             {
@@ -753,7 +892,8 @@ namespace VirtualCafe.Recommendation
             var rt = Box(parent, value, x, y, w, h); rt.gameObject.AddComponent<Image>().color = new Color(.85f, .73f, .56f);
             var b = rt.gameObject.AddComponent<Button>(); b.onClick.AddListener(action);
             b.navigation = new Navigation { mode = Navigation.Mode.None };
-            var text = Label(rt, value, 3, 0, w - 6, h, 24); text.alignment = TextAnchor.MiddleCenter; return b;
+            var text = Label(rt, value, 3, 0, w - 6, h, 24); text.alignment = TextAnchor.MiddleCenter;
+            text.resizeTextForBestFit = true; text.resizeTextMinSize = 14; text.resizeTextMaxSize = 24; return b;
         }
     }
 }

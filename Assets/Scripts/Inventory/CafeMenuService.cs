@@ -82,7 +82,7 @@ namespace VirtualCafe.Inventory
         private bool TryResolve(MenuSelection selection, out DrinkRequest drink, out string reason)
         {
             drink = null;
-            reason = "菜单饮品、杯型、豆奶选项或数量无效。";
+            reason = "Invalid menu item, cup size, bean, milk or quantity.";
             if (selection == null || selection.Servings <= 0) return false;
             var item = Array.Find(menu.items, i => i.id == selection.MenuItemId);
             if (item == null || Array.IndexOf(item.cupSizesMl, selection.CupSizeMl) < 0) return false;
@@ -117,7 +117,7 @@ namespace VirtualCafe.Inventory
                     // All supported amounts produce exact cents. Reject fractional-cent configuration instead of rounding silently.
                     int numerator = checked(requirement.quantity * definition.priceUnitCents);
                     if (definition.priceUnitQuantity <= 0 || definition.priceUnitCents < 0 || numerator % definition.priceUnitQuantity != 0)
-                    { reason = "计价参数无效或无法精确到分。"; return false; }
+                    { reason = "Invalid pricing parameters or amount cannot be expressed in whole cents."; return false; }
                     int cents = numerator / definition.priceUnitQuantity;
                     if (requirement.source == "bean") result.beanCents = checked(result.beanCents + cents);
                     else result.milkCents = checked(result.milkCents + cents);
@@ -127,16 +127,16 @@ namespace VirtualCafe.Inventory
                 result.unitPriceCents = checked(result.beanCents + result.milkCents + result.waterIceCents + result.sizeSurchargeCents);
                 result.totalPriceCents = checked(result.unitPriceCents * drink.Servings);
                 quote = result;
-                reason = "成功";
+                reason = "Success";
                 return true;
             }
-            catch (OverflowException) { reason = "金额超出整数分范围。"; return false; }
+            catch (OverflowException) { reason = "Amount exceeds the supported range in cents."; return false; }
         }
 
         // Thin integration boundary, not a cart/payment system. Inventory rechecks all lines together.
         public bool TryConfirmOrder(IReadOnlyList<MenuSelection> selections, out string reason)
         {
-            reason = "订单不能为空。";
+            reason = "Order cannot be empty.";
             if (selections == null || selections.Count == 0) return false;
             var drinks = new List<DrinkRequest>();
             foreach (var selection in selections)

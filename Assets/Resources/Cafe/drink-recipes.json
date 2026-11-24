@@ -2,12 +2,12 @@
   "recipes": [
     {
       "id": "black-coffee",
-      "name": "黑咖啡",
+      "name": "Black Coffee",
       "cupSizeMl": 400,
       "extractionTargetG": 30,
       "waterMl": 150,
       "iceG": 200,
-      "note": "项目演示参数；萃取液为制作目标，水和冰仅供制作动画使用，均不扣库存。",
+      "note": "Demo parameters; extraction is a preparation target. Water and ice are used only for the preparation animation and are not deducted from inventory.",
       "requirements": [
         {
           "source": "bean",
@@ -17,12 +17,12 @@
     },
     {
       "id": "black-coffee",
-      "name": "黑咖啡",
+      "name": "Black Coffee",
       "cupSizeMl": 500,
       "extractionTargetG": 36,
       "waterMl": 220,
       "iceG": 230,
-      "note": "项目演示参数；萃取液为制作目标，水和冰仅供制作动画使用，均不扣库存。",
+      "note": "Demo parameters; extraction is a preparation target. Water and ice are used only for the preparation animation and are not deducted from inventory.",
       "requirements": [
         {
           "source": "bean",
@@ -32,12 +32,12 @@
     },
     {
       "id": "latte",
-      "name": "拿铁",
+      "name": "Latte",
       "cupSizeMl": 400,
       "extractionTargetG": 40,
       "waterMl": 0,
       "iceG": 0,
-      "note": "项目演示参数；萃取液为制作目标，水和冰仅供制作动画使用，均不扣库存。",
+      "note": "Demo parameters; extraction is a preparation target. Water and ice are used only for the preparation animation and are not deducted from inventory.",
       "requirements": [
         {
           "source": "bean",
@@ -51,12 +51,12 @@
     },
     {
       "id": "latte",
-      "name": "拿铁",
+      "name": "Latte",
       "cupSizeMl": 500,
       "extractionTargetG": 40,
       "waterMl": 0,
       "iceG": 0,
-      "note": "项目演示参数；萃取液为制作目标，水和冰仅供制作动画使用，均不扣库存。",
+      "note": "Demo parameters; extraction is a preparation target. Water and ice are used only for the preparation animation and are not deducted from inventory.",
       "requirements": [
         {
           "source": "bean",

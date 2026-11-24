@@ -23,7 +23,7 @@ namespace VirtualCafe.Inventory
         private CafeMenuService menu;
         private bool confirming;
         public string PriceText { get; private set; } = "—";
-        public string StatusText { get; private set; } = "尚未初始化";
+        public string StatusText { get; private set; } = "Not initialized";
         public bool CanConfirm { get; private set; }
         public string LastResult { get; private set; } = "";
         public bool LastConfirmationSucceeded { get; private set; }
@@ -68,13 +68,13 @@ namespace VirtualCafe.Inventory
                 bool priced = menu.TryGetPrice(selection, out var price, out string reason);
                 PriceText = priced ? FormatCents(price.totalPriceCents) : "—";
                 CanConfirm = priced && menu.IsAvailable(selection, out reason);
-                StatusText = CanConfirm ? "可制作" : reason;
+                StatusText = CanConfirm ? "Available" : reason;
             }
             catch (Exception e)
             {
                 CanConfirm = false;
                 PriceText = "—";
-                StatusText = "库存初始化或查询失败：" + e.Message;
+                StatusText = "Inventory initialization or lookup failed: " + e.Message;
             }
             Emit(() => PriceChanged.Invoke(PriceText));
             Emit(() => StatusChanged.Invoke(StatusText));
@@ -95,10 +95,10 @@ namespace VirtualCafe.Inventory
                 else
                 {
                     success = menu.TryConfirmOrder(new[] { CurrentSelection }, out result);
-                    if (success) result = "确认成功，库存已保存；金额 " + FormatCents(price.totalPriceCents);
+                    if (success) result = "Order confirmed. Inventory saved. Total: " + FormatCents(price.totalPriceCents);
                 }
             }
-            catch (Exception e) { result = "确认失败：" + e.Message; }
+            catch (Exception e) { result = "Confirmation failed: " + e.Message; }
             LastConfirmationSucceeded = success;
             LastResult = result;
             // Keep the guard raised through event delivery and refresh.

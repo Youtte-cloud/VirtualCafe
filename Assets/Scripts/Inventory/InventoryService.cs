@@ -171,11 +171,11 @@ namespace VirtualCafe.Inventory
             catch (Exception e)
             {
                 Debug.LogError("[Cafe Inventory] 库存保存失败，整笔未扣减，未发送库存变化通知。错误类型：" + e.GetType().Name);
-                reason = "库存保存失败，未扣减：" + e.Message;
+                reason = "Inventory could not be saved; no stock was deducted: " + e.Message;
                 return false;
             }
             quantities = candidate;
-            reason = "成功";
+            reason = "Success";
             // A broken UI listener cannot change a committed transaction's outcome.
             if (InventoryChanged != null)
                 foreach (Action listener in InventoryChanged.GetInvocationList())
@@ -187,36 +187,36 @@ namespace VirtualCafe.Inventory
         {
             demand = new Dictionary<string, int>();
             reason = null;
-            if (drinks == null || drinks.Count == 0) { reason = "订单不能为空。"; return false; }
+            if (drinks == null || drinks.Count == 0) { reason = "Order cannot be empty."; return false; }
             try
             {
                 foreach (var drink in drinks)
                 {
                     if (drink == null || drink.Servings <= 0 || !recipes.TryGetValue(RecipeKey(drink.RecipeId ?? "", drink.CupSizeMl), out var recipe))
-                    { reason = "饮品、杯型或份数无效。"; return false; }
+                    { reason = "Invalid drink, cup size or quantity."; return false; }
                     bool needsBean = Array.Exists(recipe.requirements, r => r.source == "bean");
                     bool needsMilk = Array.Exists(recipe.requirements, r => r.source == "milk");
                     if ((!needsBean && !string.IsNullOrEmpty(drink.BeanId)) ||
                         (!needsMilk && !string.IsNullOrEmpty(drink.MilkId)))
-                    { reason = "该饮品不接受所选咖啡豆或奶。"; return false; }
+                    { reason = "This drink does not support the selected bean or milk."; return false; }
                     foreach (var requirement in recipe.requirements)
                     {
                         string id = requirement.source == "bean" ? drink.BeanId :
                             requirement.source == "milk" ? drink.MilkId : requirement.itemId;
                         if (!definitions.TryGetValue(id ?? "", out var item) ||
                             (requirement.source != "item" && item.category != requirement.source))
-                        { reason = "请选择配方要求的咖啡豆或奶。"; return false; }
+                        { reason = "Please select the bean or milk required by the recipe."; return false; }
                         demand.TryGetValue(id, out int existing);
                         demand[id] = checked(existing + checked(requirement.quantity * drink.Servings));
                     }
                 }
             }
-            catch (OverflowException) { reason = "订单数量超出允许范围。"; return false; }
+            catch (OverflowException) { reason = "Order quantity exceeds the allowed range."; return false; }
             foreach (var entry in demand)
                 if (checkStock && quantities[entry.Key] < entry.Value)
                 {
                     var item = definitions[entry.Key];
-                    reason = $"库存不足：{item.name}，需要 {entry.Value} {item.unit}，现有 {quantities[entry.Key]} {item.unit}。整笔未扣减。";
+                    reason = $"Insufficient stock: {item.name}. Required: {entry.Value} {item.unit}; available: {quantities[entry.Key]} {item.unit}. No stock was deducted.";
                     return false;
                 }
             return true;
@@ -250,12 +250,12 @@ namespace VirtualCafe.Inventory
         {
             var document = JsonUtility.FromJson<InventoryDocument>(json);
             if (document == null || document.version != 1 || document.items == null || document.items.Length != definitions.Count)
-                throw new InvalidDataException("库存文件版本或条目不正确；不会自动覆盖原文件。");
+                throw new InvalidDataException("Invalid inventory file version or entries; the original file will not be overwritten automatically.");
             var result = new Dictionary<string, int>();
             foreach (var entry in document.items)
             {
                 if (entry == null || !definitions.ContainsKey(entry.itemId ?? "") || entry.quantity < 0 || result.ContainsKey(entry.itemId))
-                    throw new InvalidDataException("库存文件含无效、重复或负数条目；不会自动重置。");
+                    throw new InvalidDataException("Inventory file contains invalid, duplicate or negative entries; it will not be reset automatically.");
                 result.Add(entry.itemId, entry.quantity);
             }
             return result;

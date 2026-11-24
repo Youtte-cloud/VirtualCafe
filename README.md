@@ -541,6 +541,19 @@ CafeMain 场景暂由场景负责人统一修改。
 
 ## 11. 基本验收
 
+语音识别默认使用阿里云百炼 Qwen-ASR（北京地域）。
+在 Unity 菜单 `Virtual Cafe → Speech Settings` 填入百炼 API Key，
+点击 `Save on this computer`，再进入柜台的 `Voice conversation / 语音点单`。
+选择中、英或日语，点击麦克风录音，再次点击停止并识别（最长30秒），
+识别结果进入原有点单流程；店员只用文字回复。
+
+配置保存在 `UserSettings/CafeSpeech.local.json`，不进入版本控制；
+打包后使用 `Application.persistentDataPath` 下的同名文件，字段为 `aliyunApiKey`。
+也可设置环境变量 `DASHSCOPE_API_KEY` 后重启 Unity；本地文件中的非空密钥优先。
+录音发送到阿里云进行识别，不写入磁盘。对话模型继续使用 `LLM Settings`。
+获取密钥：https://help.aliyun.com/zh/model-studio/get-api-key 。
+通过 `Virtual Cafe → Speech → Run Audio Checks` 可运行音频及百炼协议检查。
+
 接待：
 - 欢迎选项能够进入点单、推荐和结束流程。
 - 同一次进入接待区域不会反复自动招呼。
