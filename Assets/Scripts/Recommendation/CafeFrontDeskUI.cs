@@ -425,27 +425,19 @@ namespace VirtualCafe.Recommendation
 
             try
             {
-                // Give the preview scripts one frame to finish their layout.
                 yield return null;
 
                 if (orderAnimation && orderAnimation.isActiveAndEnabled)
                     yield return orderAnimation.Play();
 
-                // Keep the existing receipt and pickup-number display.
                 ShowCompletion();
-
-                yield return new WaitForSecondsRealtime(
-                    Mathf.Max(0.5f, completionDisplaySeconds)
-                );
-
-                purchasing = false;
-                EndPlayerInteraction();
             }
             finally
             {
                 purchasing = false;
                 orderCompletionRoutine = null;
 
+                // 动画结束后恢复按钮点击。
                 if (root && root.gameObject.activeSelf)
                     SetPointerInteraction(true);
             }
