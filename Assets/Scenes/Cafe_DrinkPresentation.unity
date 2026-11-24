@@ -17161,6 +17161,7 @@ GameObject:
   - component: {fileID: 1502790308}
   - component: {fileID: 1502790307}
   - component: {fileID: 1502790309}
+  - component: {fileID: 1502790310}
   m_Layer: 0
   m_Name: DrinkPresentation
   m_TagString: Untagged
@@ -17257,6 +17258,24 @@ MonoBehaviour:
   labelOffset: -0.08
   labelSize: 0.006
   labelColor: {r: 0.22, g: 0.14, b: 0.08, a: 1}
+--- !u!114 &1502790310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1502790306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77cbdb1145002674f8535464a12aff27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ingredientPresentation: {fileID: 1502790309}
+  cupAnchor: {fileID: 152306565}
+  customerCamera: {fileID: 963194227}
+  duration: 1.8
+  gatheringHeight: 0.18
+  swirlRadius: 0.06
 --- !u!1001 &1506111747
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23036,6 +23055,8 @@ MonoBehaviour:
   reception: {fileID: 1873213466}
   recommendation: {fileID: 2101000001}
   customerCamera: {fileID: 963194227}
+  orderAnimation: {fileID: 1502790310}
+  completionDisplaySeconds: 3
   chatScrollSpeed: 75
   receptionCenter: {x: 0.7, y: 0, z: 0}
   receptionHalfExtents: {x: 1.4, y: 2, z: 1}

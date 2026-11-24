@@ -1,3 +1,4 @@
+using System.Collections;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,6 +15,11 @@ namespace VirtualCafe.Recommendation
         public CafeReceptionController reception;
         public CafeRecommendationController recommendation;
         public Camera customerCamera;
+        [Header("Order animation")]
+        public CafeOrderAnimation orderAnimation;
+        public float completionDisplaySeconds = 3f;
+
+        private Coroutine orderCompletionRoutine;
         [Range(20, 200)] public float chatScrollSpeed = 75;
         public Vector3 receptionCenter = new Vector3(.7f, 0, 0);
         public Vector3 receptionHalfExtents = new Vector3(1.4f, 2, 1);
@@ -131,7 +137,16 @@ namespace VirtualCafe.Recommendation
         }
         private void OnDisable()
         {
-            if (root) EndPlayerInteraction();
+            if (orderCompletionRoutine != null)
+            {
+                StopCoroutine(orderCompletionRoutine);
+                orderCompletionRoutine = null;
+            }
+
+            purchasing = false;
+
+            if (root)
+                EndPlayerInteraction();
         }
         private void OnDestroy()
         {
@@ -212,11 +227,13 @@ namespace VirtualCafe.Recommendation
         }
         public void OpenRecommendation()
         {
+            if (purchasing) return;
             mode = "recommendation"; messages.Clear(); purchased = false; currentReceipt = null;
             reception.OpenRecommendation(); Build(); recommendation.BeginSession();
         }
         public void OpenOrder()
         {
+            if (purchasing) return;
             beanChosen = cupChosen = milkChosen = true;
             mode = "order"; recommendation.CancelSession(); reception.OpenOrder(); purchased = false; currentReceipt = null; Build();
         }
@@ -305,38 +322,133 @@ namespace VirtualCafe.Recommendation
         }
         private void Purchase()
         {
-            if (purchased || purchasing || validationPopup || recommendation.IsBusy ||
-                (mode != "order" && mode != "recommendation")) return;
-            if (mode == "recommendation" && recommendation.CurrentRecommendation == null) return;
+            if (purchased || purchasing || validationPopup ||
+                recommendation.IsBusy ||
+                (mode != "order" && mode != "recommendation"))
+                return;
+
+            if (mode == "recommendation" &&
+                recommendation.CurrentRecommendation == null)
+                return;
+
             var adapter = reception.menuAdapter;
             var selection = adapter.CurrentSelection;
-            var definition = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == selection.MenuItemId);
-            var missing = CafeUiSelectionRules.MissingOptions(selection, definition, cupChosen, beanChosen, milkChosen);
+
+            var item = Array.Find(
+                CafeRuntimeServices.Menu.GetMenu().items,
+                x => x.id == selection.MenuItemId
+            );
+
+            var missing = CafeUiSelectionRules.MissingOptions(
+                selection, item, cupChosen, beanChosen, milkChosen
+            );
+
             if (missing.Length > 0)
             {
-                ShowValidationPopup("Please select: " + string.Join(", ", missing));
+                ShowValidationPopup(
+                    "Please select: " + string.Join(", ", missing)
+                );
                 return;
             }
-            if (!CafeRuntimeServices.Menu.TryGetPrice(selection, out var quote, out string reason)) { status.text = DisplayEnglish(reason); return; }
-            var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == selection.MenuItemId);
-            var receipt = new CafeOrderReceipt { selection = selection, drinkName = DisplayEnglish(item.name),
-                beanName = Name(string.IsNullOrEmpty(selection.BeanId) ? item.beanIds[0] : selection.BeanId),
-                milkName = string.IsNullOrEmpty(selection.MilkId) ? "" : Name(selection.MilkId), totalPriceCents = quote.totalPriceCents };
+
+            if (!CafeRuntimeServices.Menu.TryGetPrice(
+                selection, out var quote, out string reason))
+            {
+                status.text = DisplayEnglish(reason);
+                return;
+            }
+
+            var receipt = new CafeOrderReceipt
+            {
+                selection = selection,
+                drinkName = DisplayEnglish(item.name),
+                beanName = Name(
+                    string.IsNullOrEmpty(selection.BeanId)
+                        ? item.beanIds[0]
+                        : selection.BeanId
+                ),
+                milkName = string.IsNullOrEmpty(selection.MilkId)
+                    ? ""
+                    : Name(selection.MilkId),
+                totalPriceCents = quote.totalPriceCents
+            };
+
             purchasing = true;
-            if (confirm) confirm.interactable = false;
+
+            if (confirm)
+                confirm.interactable = false;
+
+            bool confirmed = false;
+
             try
             {
+                // Confirm stock exactly once before playing the animation.
                 adapter.ConfirmCurrentSelection();
                 purchased = adapter.LastConfirmationSucceeded;
-                if (!purchased) { status.text = DisplayEnglish(adapter.LastResult); return; }
+
+                if (!purchased)
+                {
+                    status.text = DisplayEnglish(adapter.LastResult);
+                    return;
+                }
+
                 currentReceipt = receipt;
                 receipt.IssuePickupNumber();
-                // A reply/display listener failure must not invite a second purchase.
-                try { recommendation.NotifyConfirmedOrder(receipt); }
-                catch (Exception e) { Debug.LogException(e); }
-                ShowCompletion();
+
+                try
+                {
+                    recommendation.NotifyConfirmedOrder(receipt);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+
+                confirmed = true;
             }
-            finally { purchasing = false; }
+            finally
+            {
+                if (!confirmed)
+                    purchasing = false;
+            }
+
+            orderCompletionRoutine =
+                StartCoroutine(CompleteOrderWithAnimation());
+        }
+
+        private IEnumerator CompleteOrderWithAnimation()
+        {
+            SetPointerInteraction(false);
+
+            if (status)
+                status.text = "Preparing your drink...";
+
+            try
+            {
+                // Give the preview scripts one frame to finish their layout.
+                yield return null;
+
+                if (orderAnimation && orderAnimation.isActiveAndEnabled)
+                    yield return orderAnimation.Play();
+
+                // Keep the existing receipt and pickup-number display.
+                ShowCompletion();
+
+                yield return new WaitForSecondsRealtime(
+                    Mathf.Max(0.5f, completionDisplaySeconds)
+                );
+
+                purchasing = false;
+                EndPlayerInteraction();
+            }
+            finally
+            {
+                purchasing = false;
+                orderCompletionRoutine = null;
+
+                if (root && root.gameObject.activeSelf)
+                    SetPointerInteraction(true);
+            }
         }
         private void ShowCompletion()
         {
@@ -348,7 +460,7 @@ namespace VirtualCafe.Recommendation
             root.sizeDelta = new Vector2(800, 650);
             Label(root, "Order confirmed", 40, 35, 560, 60, 36);
             MakeButton(root, "Close", 650, 35, 110, 48, EndPlayerInteraction);
-            Label(root, "Thank you! Please keep your pickup number.", 40, 115, 720, 50, 25);
+            Label(root, "Purchase complete. Thank you for visiting!", 40, 115, 720, 50, 25);
             var receiptCard = Box(root, "Receipt", 40, 185, 720, 190);
             receiptCard.gameObject.AddComponent<Image>().color = new Color(.94f, .88f, .77f);
             Label(receiptCard, "Pickup number", 28, 20, 660, 36, 23);
@@ -363,6 +475,7 @@ namespace VirtualCafe.Recommendation
         {
             if (!player) player = FindObjectOfType<CafeDesktopPlayer>();
             if (player) EvaluateReception(player.transform.position, player.IsSeated);
+            if (purchasing) return;
             if (mode != "order" && mode != "recommendation") return;
             bool busy = recommendation.IsBusy;
             bool selected = mode == "order" || recommendation.CurrentRecommendation != null;
