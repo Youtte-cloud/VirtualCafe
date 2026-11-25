@@ -35,7 +35,8 @@ namespace VirtualCafe.Recommendation.Editor
             speech = ui.GetComponent<CafeSpeechConversation>();
             if (!speech || !ui.reception || !ui.reception.menuAdapter || !ui.recommendation)
                 throw new InvalidOperationException("The front desk references are incomplete.");
-            if (ui.IsPreparingOrder || ui.recommendation.IsBusy || speech.IsBusy || speech.IsRecording)
+            if (ui.IsPreparingOrder || (ui.machineProduction && ui.machineProduction.IsBusy) ||
+                ui.recommendation.IsBusy || speech.IsBusy || speech.IsRecording)
                 throw new InvalidOperationException("Finish the current request, recording or preparation before checking the UI.");
             if (!ui.IsInReceptionRange)
             {
@@ -161,10 +162,18 @@ namespace VirtualCafe.Recommendation.Editor
                 Check(ui.InteractionState == "closed" && !ui.IsInterfaceVisible, "Closing hides the interaction");
                 Check(!speech.Active && !speech.IsRecording && !speech.IsBusy, "Closing clears voice activity");
                 Check(!player.UiMode && Cursor.visible && Cursor.lockState == CursorLockMode.None, "Closing restores walking with a visible cursor");
-                ui.EvaluateReception(ui.receptionCenter, false);
+                ui.EvaluateReception(player.transform.position, false);
                 yield return null;
-                ui.EvaluateReception(ui.receptionCenter, false);
+                ui.EvaluateReception(player.transform.position, false);
                 Check(ui.InteractionState == "closed" && !ui.IsInterfaceVisible, "Dismissed reception does not immediately auto-open again");
+                // Exit well beyond the outer boundary, then approach the same barista again.
+                ui.EvaluateReception(player.transform.position + Vector3.right * 100f, false);
+                ui.EvaluateReception(player.transform.position, false);
+                Check(ui.IsInterfaceVisible, "Leaving and returning re-arms the automatic greeting");
+                ui.EndPlayerInteraction();
+                Check(ui.TryOpenInteraction(), "F interaction entry can reopen after dismissal");
+                ui.EndPlayerInteraction();
+
             }
             var explorer = UnityEngine.Object.FindObjectOfType<CafeDesktopPlayer>();
             var bag = GameObject.Find("Coffee Bean Bag");
