@@ -82,17 +82,7 @@ public sealed class CafeIngredientPresentation : MonoBehaviour
             return;
         }
 
-        string mode = frontDesk.InteractionState;
-
-        bool showingOrder = mode == "order";
-
-        bool showingRecommendation =
-            mode == "recommendation" &&
-            frontDesk.recommendation &&
-            frontDesk.recommendation.CurrentRecommendation != null;
-
-        if (!frontDesk.IsInterfaceVisible ||
-            (!showingOrder && !showingRecommendation))
+        if (!frontDesk.ShouldShowDrinkPreview)
         {
             HideAll();
             return;

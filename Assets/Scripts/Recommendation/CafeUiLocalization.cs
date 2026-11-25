@@ -9,6 +9,7 @@ namespace VirtualCafe.Recommendation
         public static int LanguageIndex { get; set; } = 1;
         public static string LanguageCode => LanguageIndex == 0 ? "zh-CN" : LanguageIndex == 2 ? "ja-JP" : "en-US";
         private static readonly string[,] Phrases = {
+            { "Keep exploring", "继续看看", "引き続き見て回る" },
             { "Interested in this coffee?", "想尝尝这杯吗？", "こちらのコーヒーはいかがですか？" },
             { "Order this cup", "点这杯", "この一杯を注文" },
             { "Made with milk; you can choose your bean and milk.", "这款加入了奶，可以选择咖啡豆和奶种。", "ミルク入りです。豆とミルクをお選びいただけます。" },

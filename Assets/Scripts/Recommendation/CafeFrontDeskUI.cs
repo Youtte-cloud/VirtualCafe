@@ -37,6 +37,10 @@ namespace VirtualCafe.Recommendation
         public bool IsInterfaceVisible => root && (root.gameObject.activeSelf || dialogueActive || waitingForReply);
         public string InteractionState => mode;
         public bool IsPreparingOrder => purchasing;
+        private bool browsingMenu, hasChosenDrink;
+        public bool ShouldShowDrinkPreview => IsInterfaceVisible && !browsingMenu &&
+            ((mode == "order" && hasChosenDrink) ||
+             (mode == "recommendation" && recommendation && recommendation.CurrentRecommendation != null));
         // 提供给原料模型展示读取。
         public bool IsBeanChosen => beanChosen;
         public bool IsMilkChosen => milkChosen;
@@ -62,9 +66,12 @@ namespace VirtualCafe.Recommendation
         private Action menuReturn;
         private bool languageChosen;
         private CafeCupInteraction cupInteraction;
+        private CafeBeanInspection beanInspection;
         private Transform inspectedCupAnchor;
+        private Transform autoSpeechAnchor;
         public bool CanInspectCups => root && isActiveAndEnabled && !IsInterfaceVisible && !purchasing && player && !player.IsSeated;
-        public string HoveredCupName => cupInteraction ? cupInteraction.HoverName : "";
+        public string HoveredCupName => beanInspection && !string.IsNullOrEmpty(beanInspection.HoverName)
+            ? beanInspection.HoverName : cupInteraction ? cupInteraction.HoverName : "";
         public CafeOrderReceipt CurrentReceipt => currentReceipt;
         private readonly List<string> messages = new List<string>();
         private readonly List<Button> configurationButtons = new List<Button>();
@@ -84,6 +91,7 @@ namespace VirtualCafe.Recommendation
             if (!root || mode == "closed" || purchasing) return;
             dialogueActive = waitingForReply = false;
             inspectedCupAnchor = null;
+            if (beanInspection) beanInspection.ClearSelection();
             StopVoice();
             if (input) draft = input.text;
             recommendation.CancelSession();
@@ -144,15 +152,24 @@ namespace VirtualCafe.Recommendation
             speechBubble.baristaAnchor = baristaSpeechAnchor;
             speechBubble.fallbackPosition = receptionCenter + new Vector3(0, 1.8f, 1.3f);
             if (!speechBubble.baristaAnchor)
-                foreach (var renderer in FindObjectsOfType<SkinnedMeshRenderer>())
+                foreach (var renderer in FindObjectsOfType<Renderer>())
                 {
-                    string path = renderer.name.ToLowerInvariant();
-                    for (Transform t = renderer.transform.parent; t; t = t.parent) path += "/" + t.name.ToLowerInvariant();
-                    if (!path.Contains("mugi") && !path.Contains("barista") && !path.Contains("robot")) continue;
-                    var head = new GameObject("SpeechAnchor").transform;
-                    head.SetParent(renderer.transform, true);
-                    head.position = new Vector3(renderer.bounds.center.x, renderer.bounds.max.y, renderer.bounds.center.z);
-                    speechBubble.baristaAnchor = head; break;
+                    Transform robot = null;
+                    for (Transform t = renderer.transform; t; t = t.parent)
+                    {
+                        string name = t.name.ToLowerInvariant();
+                        if (name.Contains("mugi") || name.Contains("barista") || name.Contains("robot")) { robot = t; break; }
+                    }
+                    if (!robot) continue;
+                    // Imported robot models may use MeshRenderer rather than SkinnedMeshRenderer.
+                    Bounds body = renderer.bounds;
+                    foreach (var part in robot.GetComponentsInChildren<Renderer>())
+                        if (!(part is ParticleSystemRenderer) && !part.GetComponent<TextMesh>()) body.Encapsulate(part.bounds);
+                    autoSpeechAnchor = new GameObject("BaristaSpeechAnchor").transform;
+                    autoSpeechAnchor.SetParent(robot, true);
+                    autoSpeechAnchor.position = new Vector3(body.center.x, body.max.y - body.size.y * .18f, body.center.z);
+                    speechBubble.baristaAnchor = autoSpeechAnchor;
+                    break;
                 }
             var go = new GameObject("FrontDeskTerminal", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
             go.transform.SetParent(customerCamera.transform, false);
@@ -183,8 +200,10 @@ namespace VirtualCafe.Recommendation
             mode = "closed";
             root.gameObject.SetActive(false);
             TerminalCanvas.enabled = false;
+            beanInspection = gameObject.AddComponent<CafeBeanInspection>();
+            beanInspection.Initialize(this);
             cupInteraction = gameObject.AddComponent<CafeCupInteraction>();
-            cupInteraction.Initialize(this, reception.highlighter, customerCamera);
+            cupInteraction.Initialize(this, reception.highlighter, customerCamera, beanInspection);
         }
         private void OnDisable()
         {
@@ -202,6 +221,8 @@ namespace VirtualCafe.Recommendation
         private void OnDestroy()
         {
             if (speech) { speech.Recognized.RemoveListener(OnSpeechRecognized); speech.Cancel(); }
+            if (autoSpeechAnchor) Destroy(autoSpeechAnchor.gameObject);
+            if (beanInspection) Destroy(beanInspection);
             if (cupInteraction) Destroy(cupInteraction);
             if (speechBubble) Destroy(speechBubble);
             if (customerBubble) Destroy(customerBubble);
@@ -286,6 +307,7 @@ namespace VirtualCafe.Recommendation
         public void StartVoiceConversation(int languageIndex)
         {
             if (purchasing || !root) return;
+            browsingMenu = false;
             languageChosen = true;
             CafeUiLocalization.LanguageIndex = Mathf.Clamp(languageIndex, 0, 2);
             draft = "";
@@ -309,7 +331,7 @@ namespace VirtualCafe.Recommendation
         private void ShowLanguagePicker(Action<int> selected, Action back)
         {
             // Keep the recommendation session and selected recipe intact while changing the display language.
-            if (mode == "closed") mode = "languages";
+            if (mode == "closed" || mode == "bean-info") mode = "languages";
             speechBubble.Hide(); customerBubble.Hide();
             if (speech) speech.Cancel();
             dialogueActive = waitingForReply = false;
@@ -427,6 +449,7 @@ namespace VirtualCafe.Recommendation
         public void OpenRecommendation()
         {
             if (purchasing) return;
+            browsingMenu = false;
             StopVoice();
             lastSubmittedPreference = null;
             mode = "recommendation"; messages.Clear(); purchased = false; currentReceipt = null;
@@ -435,6 +458,7 @@ namespace VirtualCafe.Recommendation
         public void OpenOrder()
         {
             if (purchasing) return;
+            hasChosenDrink = false; browsingMenu = true;
             StopVoice();
             beanChosen = cupChosen = milkChosen = true;
             if (speechBubble) speechBubble.Hide();
@@ -444,6 +468,7 @@ namespace VirtualCafe.Recommendation
         }
         private void ShowDrinkMenu()
         {
+            browsingMenu = true;
             var items = CafeRuntimeServices.Menu.GetMenu().items;
             ActionWindow("Choose your coffee", 145 + ((items.Length + 1) / 2) * 100, () => { (menuReturn ?? ShowWelcomeChoices)(); });
             int index = 0;
@@ -484,6 +509,34 @@ namespace VirtualCafe.Recommendation
             }
             IntroduceCup(productId);
         }
+        public bool InspectBean(string beanId, Transform target)
+        {
+            if (!CanInspectCups) return false;
+            var definition = CafeRuntimeServices.Inventory.GetItemDefinition(beanId);
+            if (definition.category != "bean") return false;
+            inspectedCupAnchor = target; greeted = true; mode = "bean-info";
+            if (!languageChosen)
+                ShowLanguagePicker(_ => ShowBeanInfo(beanId), EndPlayerInteraction);
+            else ShowBeanInfo(beanId);
+            return true;
+        }
+        private void ShowBeanInfo(string beanId)
+        {
+            mode = "bean-info";
+            ActionWindow("", 300);
+            // This is a small off-centre commentary card, not the normal ordering window.
+            Clear();
+            var definition = CafeRuntimeServices.Inventory.GetItemDefinition(beanId);
+            const float width = 460, padding = 20;
+            Label(root, "YOUR BARISTA", padding, 16, width - 40, 26, 17).fontStyle = FontStyle.Bold;
+            Label(root, DisplayEnglish(definition.name), padding, 58, width - 40, 42, 27).fontStyle = FontStyle.Bold;
+            var explanation = Label(root, CafeUiLocalization.Text(definition.flavorTendency), padding, 118, width - 40, 170, 22);
+            float bodyHeight = Mathf.Max(70, Mathf.Ceil(explanation.preferredHeight) + 12);
+            explanation.rectTransform.sizeDelta = new Vector2(width - 40, bodyHeight);
+            float height = 118 + bodyHeight + 82;
+            root.sizeDelta = new Vector2(width, height);
+            MakeButton(root, "Keep exploring", padding, height - 64, width - 40, 44, EndPlayerInteraction);
+        }
         private void IntroduceCup(string productId)
         {
             mode = "inspect";
@@ -514,6 +567,7 @@ namespace VirtualCafe.Recommendation
         }
         private void SelectCupForOrder(string productId)
         {
+            hasChosenDrink = true; browsingMenu = false;
             mode = "order"; recommendation.CancelSession(); StopVoice(); reception.OpenOrder();
             beanChosen = cupChosen = milkChosen = true; beanChoiceProduct = productId;
             reception.menuAdapter.SelectDrink(productId); reception.menuAdapter.SetQuantity(1);
@@ -524,6 +578,7 @@ namespace VirtualCafe.Recommendation
         }
         private void ShowPreferenceInput()
         {
+            browsingMenu = false;
             bool voiceMode = speech && speech.Active;
             ActionWindow("Tell your barista", voiceMode ? 480 : 360, ShowWelcomeChoices);
             var field = ChatSurface(root, "Preference input", 28, 95, 590, 100, true);
@@ -557,6 +612,7 @@ namespace VirtualCafe.Recommendation
         }
         private void ShowConfiguration()
         {
+            browsingMenu = false;
             ActionWindow("Make it your own", 790, () => {
                 if (mode == "recommendation" && recommendation.CurrentRecommendation != null) ShowRecommendationChoices();
                 else { menuReturn = ShowWelcomeChoices; ShowDrinkMenu(); }
@@ -824,6 +880,31 @@ namespace VirtualCafe.Recommendation
             float fit = Mathf.Min(1, available.x / root.sizeDelta.x, available.y / root.sizeDelta.y);
             root.localScale = Vector3.one * fit;
             root.anchoredPosition = Vector2.zero;
+            if (mode == "bean-info" && beanInspection && beanInspection.GetSelectedBounds(out var targetBounds))
+            {
+                float halfW = canvasRect.rect.width * .5f, halfH = canvasRect.rect.height * .5f;
+                float cardHalfW = root.sizeDelta.x * fit * .5f, cardHalfH = root.sizeDelta.y * fit * .5f;
+                Vector3 screen = customerCamera.WorldToScreenPoint(targetBounds.center);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, customerCamera, out var point);
+                float x = point.x >= 0 ? -halfW + cardHalfW + 28 : halfW - cardHalfW - 28;
+                float y = -halfH + cardHalfH + 90;
+                var projected = new Rect(point.x, point.y, 0, 0);
+                Vector3[] corners = {
+                    new Vector3(targetBounds.min.x,targetBounds.min.y,targetBounds.min.z), new Vector3(targetBounds.max.x,targetBounds.min.y,targetBounds.min.z),
+                    new Vector3(targetBounds.min.x,targetBounds.max.y,targetBounds.min.z), new Vector3(targetBounds.max.x,targetBounds.max.y,targetBounds.min.z),
+                    new Vector3(targetBounds.min.x,targetBounds.min.y,targetBounds.max.z), new Vector3(targetBounds.max.x,targetBounds.min.y,targetBounds.max.z),
+                    new Vector3(targetBounds.min.x,targetBounds.max.y,targetBounds.max.z), new Vector3(targetBounds.max.x,targetBounds.max.y,targetBounds.max.z) };
+                float minX=point.x, maxX=point.x, minY=point.y, maxY=point.y;
+                foreach (var corner in corners)
+                {
+                    RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, customerCamera.WorldToScreenPoint(corner), customerCamera, out var p);
+                    minX=Mathf.Min(minX,p.x); maxX=Mathf.Max(maxX,p.x); minY=Mathf.Min(minY,p.y); maxY=Mathf.Max(maxY,p.y);
+                }
+                projected = Rect.MinMaxRect(minX - 18, minY - 18, maxX + 18, maxY + 18);
+                if (projected.Overlaps(new Rect(x-cardHalfW,y-cardHalfH,cardHalfW*2,cardHalfH*2)))
+                    y = halfH - cardHalfH - 28;
+                root.anchoredPosition = new Vector2(x, Mathf.Clamp(y, -Mathf.Max(0,halfH-cardHalfH-20), Mathf.Max(0,halfH-cardHalfH-20)));
+            }
             root.localRotation = Quaternion.identity;
             if (scrollToLatest && chatScroll && chatScroll.gameObject.activeInHierarchy)
             {
@@ -881,7 +962,7 @@ namespace VirtualCafe.Recommendation
             foreach (string bean in item.beanIds)
             {
                 string id = bean;
-                var button = MakeButton(options, Name(id), x, 68, 200, 48, () =>
+                var button = MakeButton(options, BeanOptionName(id), x, 68, 200, 48, () =>
                 {
                     var current = adapter.CurrentSelection;
                     string currentBean = string.IsNullOrEmpty(current.BeanId) ? item.beanIds[0] : current.BeanId;
@@ -898,6 +979,11 @@ namespace VirtualCafe.Recommendation
                     }
                     dirty = true;
                 });
+                var beanLabel = button.GetComponentInChildren<Text>();
+                beanLabel.rectTransform.anchoredPosition = new Vector2(10, -4);
+                beanLabel.rectTransform.sizeDelta = new Vector2(180, 40);
+                beanLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
+                beanLabel.resizeTextMinSize = 16; beanLabel.resizeTextMaxSize = 22;
                 MarkSelected(button, beanChosen && activeBean == id);
                 var candidate = CopySelection(s); candidate.BeanId = id;
                 ConfigureAvailability(button, candidate, Name(id), "bean", unavailableReasons);
@@ -985,7 +1071,7 @@ namespace VirtualCafe.Recommendation
             if (available) return;
             MarkSelected(button, false);
             var label = button.GetComponentInChildren<Text>();
-            label.text += "\n" + CafeUiLocalization.Text("Sold out"); label.fontSize = 17;
+            label.text += "\n" + CafeUiLocalization.Text("Sold out"); label.fontSize = 17; label.resizeTextMaxSize = 17; label.resizeTextMinSize = 14;
             string detail = name;
             if (!reasons.Contains(detail)) reasons.Add(detail);
         }
@@ -1065,6 +1151,16 @@ namespace VirtualCafe.Recommendation
                 return CafeUiLocalization.Text("Unable to complete this action. Check your options, stock or connection and retry.");
             }
             return CafeUiLocalization.Text(text);
+        }
+        private string BeanOptionName(string id)
+        {
+            switch (id)
+            {
+                case "bean-blue-mountain": return CafeUiLocalization.Text("Blue Mountain");
+                case "bean-geisha": return CafeUiLocalization.Text("Geisha");
+                case "bean-kona": return CafeUiLocalization.Text("Kona");
+                default: return Name(id);
+            }
         }
         private string Name(string id) => DisplayEnglish(CafeRuntimeServices.Inventory.GetItemDefinition(id).name);
         private static Sprite CreateRoundedCard()
