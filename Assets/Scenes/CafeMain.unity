@@ -4154,7 +4154,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 907867347}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: cb3bde5045a0bfd48952c8487ba119c1, type: 3}
       propertyPath: m_LocalScale.x
@@ -4186,7 +4186,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cb3bde5045a0bfd48952c8487ba119c1, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cb3bde5045a0bfd48952c8487ba119c1, type: 3}
       propertyPath: m_LocalRotation.y
@@ -14035,6 +14035,7 @@ Transform:
   - {fileID: 34079395}
   - {fileID: 820143355}
   - {fileID: 1904831438}
+  - {fileID: 1034531366}
   m_Father: {fileID: 1950684246}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &911155393
@@ -15615,6 +15616,11 @@ Transform:
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 860b2988bd2687d4f8db6b0e97cf62aa, type: 3}
   m_PrefabInstance: {fileID: 1025835076}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1034531366 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cb3bde5045a0bfd48952c8487ba119c1, type: 3}
+  m_PrefabInstance: {fileID: 261940071}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1037488681
 GameObject:
@@ -26908,7 +26914,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3258956383749878533, guid: 4124d6e1fdf1c8c4d85fdb7ff6d5ad5a, type: 3}
       propertyPath: m_Name
-      value: large-mountain-canvas-v1-lod1
+      value: large mountain canvas
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -29679,4 +29685,3 @@ SceneRoots:
   - {fileID: 512157448}
   - {fileID: 1930554845}
   - {fileID: 854849395}
-  - {fileID: 261940071}
