@@ -41,6 +41,34 @@ namespace VirtualCafe.Recommendation
             catch (Exception) { Debug.LogWarning("订单已确认，取餐凭据文件保存失败；请保留界面上的号码，无需重新下单。"); }
         }
 
+        public static bool TryLoadLatest(out CafeOrderReceipt receipt)
+            => TryLoadLatest(Path.Combine(Application.persistentDataPath, "CafeOrders"), out receipt);
+
+        // Read-only history: viewing a receipt never issues a number or confirms stock again.
+        public static bool TryLoadLatest(string folder, out CafeOrderReceipt receipt)
+        {
+            receipt = null;
+            DateTimeOffset newest = DateTimeOffset.MinValue;
+            try
+            {
+                if (!Directory.Exists(folder)) return false;
+                foreach (string file in Directory.GetFiles(folder, "*.json", SearchOption.TopDirectoryOnly))
+                {
+                    try
+                    {
+                        var candidate = JsonUtility.FromJson<CafeOrderReceipt>(File.ReadAllText(file));
+                        if (candidate == null || candidate.selection == null ||
+                            string.IsNullOrEmpty(candidate.pickupNumber) || candidate.totalPriceCents < 0 ||
+                            !DateTimeOffset.TryParse(candidate.confirmedAt, out var date) || date <= newest) continue;
+                        newest = date; receipt = candidate;
+                    }
+                    catch (Exception) { /* Ignore an unreadable receipt; do not change saved orders. */ }
+                }
+            }
+            catch (Exception) { return false; }
+            return receipt != null;
+        }
+
         public string ClerkMessage => "点单完成啦！你的" + selection.CupSizeMl + "ml" + drinkName +
             (string.IsNullOrEmpty(milkName) ? "" : "（" + milkName + "）") +
             "已确认，取餐号是 " + pickupNumber + "。可以先找个喜欢的位置坐一会儿，取餐时出示这个号码就好，谢谢你～";
