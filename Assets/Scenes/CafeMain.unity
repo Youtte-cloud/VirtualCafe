@@ -11711,8 +11711,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4282274407
-  m_fontColor: {r: 0.40392157, g: 0.32156864, b: 0.24313726, a: 1}
+    rgba: 4279376945
+  m_fontColor: {r: 0.19245279, g: 0.109677784, b: 0.06935563, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -27304,10 +27304,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ingredientPresentation: {fileID: 1930554843}
   cupAnchor: {fileID: 186773689}
-  customerCamera: {fileID: 0}
+  customerCamera: {fileID: 963194227}
   duration: 1.8
-  gatheringHeight: 0.18
-  swirlRadius: 0.06
+  gatheringHeight: 0.075
+  swirlRadius: 0.025
 --- !u!114 &1930554843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27344,9 +27344,9 @@ MonoBehaviour:
   - ingredientId: milk-oat
     displayName: Oat milk
     model: {fileID: 1993410967}
-  heightAboveCup: 0.45
-  spacing: 0.28
-  modelScale: 1
+  heightAboveCup: 0.19
+  spacing: 0.12
+  modelScale: 0.42
   labelOffset: -0.08
   labelSize: 0.006
   labelColor: {r: 0.22, g: 0.14, b: 0.08, a: 1}
@@ -27377,9 +27377,9 @@ MonoBehaviour:
     model: {fileID: 1350721251}
   viewportX: 0.84
   viewportY: 0.45
-  cameraDistance: 1.2
+  cameraDistance: 0.5
   popDuration: 0.3
-  displayScale: 0.8
+  displayScale: 0.33
   largeCupScale: 1.08
   cupResizeDuration: 0.22
 --- !u!4 &1930554845

@@ -466,21 +466,73 @@ namespace VirtualCafe.Recommendation
         }
         public void EvaluateReception(Vector3 position, bool seated)
         {
-            // Once a conversation starts, crossing the approach boundary must not dismiss it.
-            // Windows already pause movement; only an explicit close/decline ends the interaction.
-            if (!root || IsInterfaceVisible) return;
+            // 已经打开的对话保持原来的行为。
+            if (!root || IsInterfaceVisible)
+                return;
+
+            // 取餐范围内不自动弹出点单。
+            // 与制作脚本使用同一个取餐定位点和距离。
+            if (machineProduction && machineProduction.pickupAnchor)
+            {
+                Vector3 difference =
+                    position - machineProduction.pickupAnchor.position;
+
+                difference.y = 0f;
+
+                float pickupRadius = Mathf.Max(
+                    0f,
+                    machineProduction.pickupDistance
+                );
+
+                if (difference.sqrMagnitude <=
+                    pickupRadius * pickupRadius)
+                {
+                    greeted = true;
+                    autoGreetingDismissed = true;
+                    return;
+                }
+            }
+
             bool inside = InsideReception(position, 0);
             bool outside = !InsideReception(position, .5f);
+
+            // 真正离开接待区域后，允许下次进入时重新招呼。
             if (outside)
             {
                 greeted = false;
                 autoGreetingDismissed = false;
                 return;
             }
-            if (!inside || seated || greeted || autoGreetingDismissed || purchasing ||
-                (machineProduction && machineProduction.IsBusy)) return;
+
+            // 制作或等待取餐期间，不重新启动自动接待。
+            // 同时记录已处理，避免制作结束后在原地弹窗。
+            if (machineProduction && machineProduction.IsBusy)
+            {
+                greeted = true;
+                autoGreetingDismissed = true;
+                return;
+            }
+
+            if (!inside ||
+                seated ||
+                greeted ||
+                autoGreetingDismissed ||
+                purchasing)
+            {
+                return;
+            }
+
             greeted = true;
-            if (!languageChosen) { ShowLanguagePicker(_ => BeginGreeting(), EndPlayerInteraction); return; }
+
+            if (!languageChosen)
+            {
+                ShowLanguagePicker(
+                    _ => BeginGreeting(),
+                    EndPlayerInteraction
+                );
+                return;
+            }
+
             BeginGreeting();
         }
         private void BeginGreeting()
