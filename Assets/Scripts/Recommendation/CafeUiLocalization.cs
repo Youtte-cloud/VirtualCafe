@@ -9,6 +9,10 @@ namespace VirtualCafe.Recommendation
         public static int LanguageIndex { get; set; } = 1;
         public static string LanguageCode => LanguageIndex == 0 ? "zh-CN" : LanguageIndex == 2 ? "ja-JP" : "en-US";
         private static readonly string[,] Phrases = {
+            { "Your drink is ready! Moving it to the pickup counter...", "咖啡制作完成，正在送往取餐区……", "コーヒーができました！受取カウンターへお運びしています…" },
+            { "Your drink is at the pickup counter.", "咖啡已制作完成，请到取餐区领取。", "コーヒーができました。受取カウンターへお越しください。" },
+            { "Press E to pick up your drink.", "咖啡已制作完成，按 E 领取。", "コーヒーができました。E キーでお受け取りください。" },
+            { "Enjoy your coffee!", "取餐成功，祝你享用愉快！", "お受け取りありがとうございます。ごゆっくりお楽しみください！" },
             { "WASD: move / Mouse: look / Click: inspect", "WASD：移动 / 移动鼠标：环顾 / 左键：查看", "WASD：移動 / マウス：見回す / 左クリック：調べる" },
             { "F: talk / WASD: move / Mouse: look", "F：与店员交谈 / WASD：移动 / 移动鼠标：环顾", "F：店員と話す / WASD：移動 / マウス：見回す" },
             { "E: stand up / Hold right mouse: look", "E：起身 / 按住鼠标右键：环顾", "E：立つ / 右ドラッグ：見回す" },

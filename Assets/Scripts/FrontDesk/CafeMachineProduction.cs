@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using UnityEngine;
+using VirtualCafe.Recommendation;
 
 public sealed class CafeMachineProduction : MonoBehaviour
 {
@@ -91,7 +92,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
         }
 
         productionPickupNumber = pickupNumber;
-        productionMessage = "正在制作咖啡，请稍候…";
+        productionMessage = "Preparing your drink... Please wait.";
         productionStartedAt = Time.unscaledTime;
         readyNotice = false;
 
@@ -342,34 +343,21 @@ public sealed class CafeMachineProduction : MonoBehaviour
 
     private void UpdateProductionMessage(string message)
     {
+        // Keep language-neutral message keys so a language change also updates an active notice.
         switch (message)
         {
             case "Preparing your drink...":
-                productionMessage =
-                    "正在制作咖啡，请稍候…";
+                productionMessage = "Preparing your drink... Please wait.";
                 break;
-
             case "Your drink is ready!":
-                productionMessage =
-                    "咖啡制作完成，正在送往取餐区…";
-
+                productionMessage = "Your drink is ready! Moving it to the pickup counter...";
                 readyNotice = true;
                 noticeStartedAt = Time.unscaledTime;
                 break;
-
             case "Your drink is at the pickup counter.":
-                productionMessage =
-                    "咖啡已制作完成，请到取餐区领取";
-                break;
-
             case "Press E to pick up your drink.":
-                productionMessage =
-                    "咖啡已制作完成，按 E 领取";
-                break;
-
             case "Enjoy your coffee!":
-                productionMessage =
-                    "取餐成功，祝你享用愉快！";
+                productionMessage = message;
                 break;
         }
     }
@@ -480,7 +468,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
                 panel.width - 24f,
                 panel.height * 0.55f
             ),
-            productionMessage,
+            CafeUiLocalization.Text(productionMessage),
             titleStyle
         );
 
@@ -491,7 +479,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
                 panel.width - 24f,
                 panel.height * 0.3f
             ),
-            "取餐号：" + productionPickupNumber,
+            CafeUiLocalization.Text("Your pickup number: ") + productionPickupNumber,
             numberStyle
         );
 
