@@ -24,7 +24,7 @@ namespace VirtualCafe.Recommendation
         }
         private void Update()
         {
-            if (!frontDesk || !highlighter || !view || highlighter.products == null || !frontDesk.CanInspectCups ||
+            if (!frontDesk || !highlighter || !view || highlighter.products == null || !frontDesk.CanInspectCups || !Application.isFocused ||
                 (EventSystem.current && EventSystem.current.IsPointerOverGameObject()))
             { ClearHover(); if (beans) beans.ClearHover(); return; }
             Ray ray = Cursor.lockState == CursorLockMode.Locked

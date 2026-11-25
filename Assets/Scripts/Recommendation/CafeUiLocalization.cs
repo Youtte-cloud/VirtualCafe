@@ -9,6 +9,12 @@ namespace VirtualCafe.Recommendation
         public static int LanguageIndex { get; set; } = 1;
         public static string LanguageCode => LanguageIndex == 0 ? "zh-CN" : LanguageIndex == 2 ? "ja-JP" : "en-US";
         private static readonly string[,] Phrases = {
+            { "WASD: move / Mouse: look / Click: inspect", "WASD：移动 / 移动鼠标：环顾 / 左键：查看", "WASD：移動 / マウス：見回す / 左クリック：調べる" },
+            { "F: talk / WASD: move / Mouse: look", "F：与店员交谈 / WASD：移动 / 移动鼠标：环顾", "F：店員と話す / WASD：移動 / マウス：見回す" },
+            { "E: stand up / Hold right mouse: look", "E：起身 / 按住鼠标右键：环顾", "E：立つ / 右ドラッグ：見回す" },
+            { "E: sit / WASD: move / Hold right mouse: look", "E：坐下 / WASD：移动 / 按住右键：环顾", "E：座る / WASD：移動 / 右ドラッグ：見回す" },
+            { "WASD: move / Hold right mouse: look / Click: inspect", "WASD：移动 / 按住右键：环顾 / 左键：查看", "WASD：移動 / 右ドラッグ：見回す / 左クリック：調べる" },
+            { "F: talk / WASD: move / Hold right mouse: look", "F：与店员交谈 / WASD：移动 / 按住右键：环顾", "F：店員と話す / WASD：移動 / 右ドラッグ：見回す" },
             { "Keep exploring", "继续看看", "引き続き見て回る" },
             { "Interested in this coffee?", "想尝尝这杯吗？", "こちらのコーヒーはいかがですか？" },
             { "Order this cup", "点这杯", "この一杯を注文" },
