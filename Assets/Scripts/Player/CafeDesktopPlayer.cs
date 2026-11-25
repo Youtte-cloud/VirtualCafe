@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using VirtualCafe.Recommendation;
@@ -40,15 +40,22 @@ namespace VirtualCafe.Player
         }
         public void SetUiMode(bool value)
         {
+            if (!value && terminal && terminal.IsPreparingOrder) return;
             UiMode = value;
             Cursor.lockState = value ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = value;
-            if (terminal) terminal.SetPointerInteraction(value);
+            if (terminal) terminal.SetPointerInteraction(value && !terminal.IsPreparingOrder);
             if (!value && EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
         }
         private void Update()
         {
             UpdateControlsHint();
+            // Preparation owns the camera and input until the order animation finishes.
+            if (terminal && terminal.IsPreparingOrder)
+            {
+                if (!UiMode) SetUiMode(true);
+                return;
+            }
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 if (terminal && terminal.IsInterfaceVisible) terminal.EndPlayerInteraction();
@@ -77,7 +84,7 @@ namespace VirtualCafe.Player
         }
         public void Move(Vector2 input, float dt)
         {
-            if (!motor || !motor.enabled || IsSeated || UiMode) return;
+            if (!motor || !motor.enabled || IsSeated || UiMode || (terminal && terminal.IsPreparingOrder)) return;
             if (motor.isGrounded && verticalSpeed < 0) verticalSpeed = -2;
             verticalSpeed += Physics.gravity.y * dt;
             Vector3 direction = transform.right * input.x + transform.forward * input.y;
@@ -179,7 +186,10 @@ namespace VirtualCafe.Player
                 "WASD: move / Mouse: look / Approach the counter";
             if (!UiMode && terminal && terminal.CanOpenInteraction)
                 hint = "F: talk to the assistant / WASD: move";
-            controlsText.text = string.IsNullOrEmpty(notice) ? hint : "Not enough room to stand. Please try again.";
+            if (!UiMode && terminal && !string.IsNullOrEmpty(terminal.HoveredCupName))
+                hint = CafeUiLocalization.Format("Click: learn about {0}", "点击：了解{0}", "クリック：{0}について聞く", terminal.HoveredCupName);
+            if (terminal && terminal.IsPreparingOrder) hint = "Preparing your drink... Please wait.";
+            controlsText.text = CafeUiLocalization.Text(string.IsNullOrEmpty(notice) ? hint : "Not enough room to stand. Please try again.");
         }
         private void OnGUI()
         {
