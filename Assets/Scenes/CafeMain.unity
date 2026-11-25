@@ -620,6 +620,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 310226397}
+  - {fileID: 1738335425}
   m_Father: {fileID: 907867347}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &36481696
@@ -1757,6 +1758,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 104294100}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &110862592 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3674532358055790538, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+  m_PrefabInstance: {fileID: 159645142}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &111982336
 GameObject:
   m_ObjectHideFlags: 0
@@ -2969,6 +2975,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Espresso Machine
       objectReference: {fileID: 0}
+    - target: {fileID: -6270070267275268918, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+      propertyPath: m_Name
+      value: ProductionCup
+      objectReference: {fileID: 0}
+    - target: {fileID: -6270070267275268918, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -4037100319142798554, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2774220344278030320, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.15
@@ -3020,6 +3038,22 @@ PrefabInstance:
     - target: {fileID: 2774220344278030320, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3674532358055790538, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+      propertyPath: m_Name
+      value: CoffeeStream
+      objectReference: {fileID: 0}
+    - target: {fileID: 3674532358055790538, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3676461805061709560, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+      propertyPath: m_Name
+      value: CoffeeSurface
+      objectReference: {fileID: 0}
+    - target: {fileID: 3676461805061709560, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6527,6 +6561,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d83c1b5c119ff3540aef3eac62392f0a, type: 3}
   m_PrefabInstance: {fileID: 401209858}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &418971434 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -6029875924372585244, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+  m_PrefabInstance: {fileID: 159645142}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &419108333
 GameObject:
@@ -13958,6 +13997,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 891722594}
   m_CullTransparentMesh: 1
+--- !u!4 &897594215 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -3219399250410487202, guid: e58ae9696ad0ac54f8bfbd2086ac7649, type: 3}
+  m_PrefabInstance: {fileID: 159645142}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &901755273
 GameObject:
   m_ObjectHideFlags: 0
@@ -14777,6 +14821,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 945714584}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &951998126
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 951998127}
+  m_Layer: 0
+  m_Name: BrewingAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &951998127
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 951998126}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1126839139}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -17267,6 +17342,64 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1126448976}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1126839137
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1126839139}
+  - component: {fileID: 1126839138}
+  m_Layer: 0
+  m_Name: DrinkProduction
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1126839138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1126839137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef6e0acdc38f9e74aa4e569dfed63a46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  productionCup: {fileID: 418971434}
+  coffeeStream: {fileID: 110862592}
+  coffeeSurface: {fileID: 897594215}
+  pickupAnchor: {fileID: 1738335425}
+  player: {fileID: 1789655619}
+  pickupDistance: 1.8
+  brewingDuration: 3
+  transferDuration: 1.2
+  liquidRiseHeight: 0.08
+  transferArcHeight: 0.2
+  audioSource: {fileID: 0}
+  brewingSound: {fileID: 0}
+  readySound: {fileID: 0}
+--- !u!4 &1126839139
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1126839137}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 951998127}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1129336322
 GameObject:
   m_ObjectHideFlags: 0
@@ -25313,6 +25446,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1731445784}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1738335424
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1738335425}
+  m_Layer: 0
+  m_Name: PickupAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1738335425
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1738335424}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.706, y: 1.356, z: 1.18}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 34079395}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1738732679
 GameObject:
   m_ObjectHideFlags: 0
@@ -25812,6 +25976,11 @@ Transform:
   - {fileID: 104294101}
   m_Father: {fileID: 1060320586}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &1789655619 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c76b38f2e7c310a4c971e63d8baec5d0, type: 3}
+  m_PrefabInstance: {fileID: 512157448}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1798946995
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27211,6 +27380,8 @@ MonoBehaviour:
   cameraDistance: 1.2
   popDuration: 0.3
   displayScale: 0.8
+  largeCupScale: 1.08
+  cupResizeDuration: 0.22
 --- !u!4 &1930554845
 Transform:
   m_ObjectHideFlags: 0
@@ -29192,6 +29363,7 @@ MonoBehaviour:
   baristaSpeechAnchor: {fileID: 0}
   customerSpeechAnchor: {fileID: 0}
   orderAnimation: {fileID: 1930554842}
+  machineProduction: {fileID: 1126839138}
   completionDisplaySeconds: 3
   chatScrollSpeed: 75
   receptionCenter: {x: 0.7, y: 0, z: 0}
@@ -29685,3 +29857,4 @@ SceneRoots:
   - {fileID: 512157448}
   - {fileID: 1930554845}
   - {fileID: 854849395}
+  - {fileID: 1126839139}

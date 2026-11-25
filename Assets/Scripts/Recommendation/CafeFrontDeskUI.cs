@@ -20,12 +20,15 @@ namespace VirtualCafe.Recommendation
         public Transform baristaSpeechAnchor;
         public Transform customerSpeechAnchor;
         private CafeSpeechConversation speech;
+        private bool pendingMachineProduction;
         private CafeBaristaBubble speechBubble;
         private CafeBaristaBubble customerBubble;
         private Button microphoneButton;
         private Text speechStatus;
         [Header("Order animation")]
         public CafeOrderAnimation orderAnimation;
+        [Header("Coffee machine production")]
+        public CafeMachineProduction machineProduction;
         public float completionDisplaySeconds = 3f;
 
         private Coroutine orderCompletionRoutine;
@@ -88,19 +91,50 @@ namespace VirtualCafe.Recommendation
         }
         public void EndPlayerInteraction()
         {
-            if (!root || mode == "closed" || purchasing) return;
+            if (!root || mode == "closed" || purchasing)
+                return;
+
             dialogueActive = waitingForReply = false;
             inspectedCupAnchor = null;
-            if (beanInspection) beanInspection.ClearSelection();
+
+            if (beanInspection)
+                beanInspection.ClearSelection();
+
             StopVoice();
-            if (input) draft = input.text;
+
+            if (input)
+                draft = input.text;
+
             recommendation.CancelSession();
             reception.EndReception();
+
             mode = "closed";
             root.gameObject.SetActive(false);
             TerminalCanvas.enabled = false;
             SetPointerInteraction(false);
-            if (player) player.SetUiMode(false);
+
+            if (player)
+                player.SetUiMode(false);
+
+            // 点单界面关闭后，由场景物体独立播放制作动画。
+            if (pendingMachineProduction)
+            {
+                if (machineProduction &&
+                    machineProduction.isActiveAndEnabled &&
+                    machineProduction.BeginProduction(
+                        currentReceipt.pickupNumber))
+                {
+                    pendingMachineProduction = false;
+                }
+                else
+                {
+                    Debug.LogError(
+                        "无法启动制作：请检查制作组件的绑定，" +
+                        "以及上一杯是否已经取走。",
+                        this
+                    );
+                }
+            }
         }
 
         // UI-only reopen entry. Player/interaction owner can bind F to this method.
@@ -776,15 +810,21 @@ namespace VirtualCafe.Recommendation
             SetPointerInteraction(false);
 
             if (status)
-                status.text = CafeUiLocalization.Text("Preparing your drink...");
+                status.text =
+                    CafeUiLocalization.Text("Preparing your drink...");
 
             try
             {
                 yield return null;
 
+                // 保留原来的原料融合动画。
                 if (orderAnimation && orderAnimation.isActiveAndEnabled)
                     yield return orderAnimation.Play();
 
+                // 这里只记录待制作，不等待取餐。
+                pendingMachineProduction = true;
+
+                // 保留原来的机器人回复、凭据和取餐号。
                 ShowCompletion();
             }
             finally
@@ -792,7 +832,6 @@ namespace VirtualCafe.Recommendation
                 purchasing = false;
                 orderCompletionRoutine = null;
 
-                // 动画结束后恢复按钮点击。
                 if (root && root.gameObject.activeSelf)
                     SetPointerInteraction(true);
             }
