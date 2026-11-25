@@ -17,6 +17,8 @@ namespace VirtualCafe.Player
         private CafeSeat seat, nearbySeat;
         private Vector3 entryPosition;
         private float pitch, verticalSpeed;
+        private int resumeLookAfterFrame;
+        private bool hasFocus = true;
         private string notice = "";
         private Font font;
         private Canvas controlsCanvas;
@@ -41,40 +43,51 @@ namespace VirtualCafe.Player
         public void SetUiMode(bool value)
         {
             if (!value && terminal && terminal.IsPreparingOrder) return;
+            if (UiMode && !value) resumeLookAfterFrame = Time.frameCount + 1;
             UiMode = value;
-            Cursor.lockState = value ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = value;
+            ReleasePointer();
             if (terminal) terminal.SetPointerInteraction(value && !terminal.IsPreparingOrder);
             if (!value && EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
         }
+        private static void ReleasePointer()
+        {
+            // A cafe is a point-and-click experience: closing a window must not hide the pointer.
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
         private void Update()
         {
+            if (!terminal) terminal = FindObjectOfType<CafeFrontDeskUI>();
+            bool interactionVisible = terminal && (terminal.IsInterfaceVisible || terminal.IsPreparingOrder);
+            if (UiMode != interactionVisible) SetUiMode(interactionVisible);
+            if (Cursor.lockState != CursorLockMode.None || !Cursor.visible) ReleasePointer();
             UpdateControlsHint();
+            if (!hasFocus) return;
             // Preparation owns the camera and input until the order animation finishes.
-            if (terminal && terminal.IsPreparingOrder)
-            {
-                if (!UiMode) SetUiMode(true);
-                return;
-            }
+            if (terminal && terminal.IsPreparingOrder) return;
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 if (terminal && terminal.IsInterfaceVisible) terminal.EndPlayerInteraction();
-                SetUiMode(false); return; // Escape must never open an invisible UI mode.
+                SetUiMode(false); return;
             }
             if (Typing()) return;
             if (Input.GetKeyDown(KeyCode.F))
             {
-                if (UiMode) { if (terminal) terminal.EndPlayerInteraction(); SetUiMode(false); }
-                else if (!IsSeated && terminal && terminal.TryOpenInteraction())
+                if (UiMode) { if (terminal) terminal.EndPlayerInteraction(); SetUiMode(false); return; }
+                if (!IsSeated && terminal && terminal.TryOpenInteraction())
                 {
-                    SetUiMode(true);
-                    return; // Do not apply movement or mouse-look on the opening frame.
+                    SetUiMode(true); return;
                 }
             }
             if (UiMode) return;
-            float dx = Input.GetAxis("Mouse X") * lookSensitivity;
-            pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * lookSensitivity, -75, 75);
-            transform.Rotate(0, dx, 0); view.transform.localRotation = Quaternion.Euler(pitch, 0, 0);
+            // Free look follows ordinary mouse movement, while the pointer remains visible.
+            // Do not rotate on the same click that selects a world object or closes a window.
+            if (Time.frameCount > resumeLookAfterFrame && !Input.GetMouseButtonDown(0))
+            {
+                float dx = Input.GetAxis("Mouse X") * lookSensitivity;
+                pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * lookSensitivity, -75, 75);
+                transform.Rotate(0, dx, 0); view.transform.localRotation = Quaternion.Euler(pitch, 0, 0);
+            }
             nearbySeat = FindNearbySeat();
             if (Input.GetKeyDown(KeyCode.E))
             {
@@ -145,11 +158,17 @@ namespace VirtualCafe.Player
             }
             notice = "旁边暂时没有足够的起身空间，请稍后再试。"; return false;
         }
-        private void OnApplicationFocus(bool focus) { if (!focus) SetUiMode(true); }
+        private void OnApplicationFocus(bool focus)
+        {
+            hasFocus = focus;
+            ReleasePointer();
+            if (focus)
+                SetUiMode(terminal && (terminal.IsInterfaceVisible || terminal.IsPreparingOrder));
+        }
         private void OnDisable()
         {
             if (controlsCanvas) controlsCanvas.enabled = false;
-            Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+            ReleasePointer();
             if (seat) { seat.Occupied = false; seat = null; }
         }
         private void OnDestroy() { if (controlsCanvas) Destroy(controlsCanvas.gameObject); if (font) Destroy(font); }
@@ -183,17 +202,13 @@ namespace VirtualCafe.Player
             string hint = UiMode ? "Mouse: select / Esc: close and walk" :
                 IsSeated ? "E: stand up / Mouse: look around" :
                 nearbySeat ? "E: sit / WASD: move / Mouse: look" :
-                "WASD: move / Mouse: look / Approach the counter";
+                "WASD: move / Mouse: look / Click: inspect";
             if (!UiMode && terminal && terminal.CanOpenInteraction)
-                hint = "F: talk to the assistant / WASD: move";
+                hint = "F: talk / WASD: move / Mouse: look";
             if (!UiMode && terminal && !string.IsNullOrEmpty(terminal.HoveredCupName))
                 hint = CafeUiLocalization.Format("Click: learn about {0}", "点击：了解{0}", "クリック：{0}について聞く", terminal.HoveredCupName);
             if (terminal && terminal.IsPreparingOrder) hint = "Preparing your drink... Please wait.";
             controlsText.text = CafeUiLocalization.Text(string.IsNullOrEmpty(notice) ? hint : "Not enough room to stand. Please try again.");
-        }
-        private void OnGUI()
-        {
-            if (!UiMode) GUI.Label(new Rect(Screen.width / 2 - 5, Screen.height / 2 - 10, 20, 20), "+");
         }
     }
 }

@@ -32,8 +32,12 @@ namespace VirtualCafe.Recommendation
         [Range(20, 200)] public float chatScrollSpeed = 75;
         public Vector3 receptionCenter = new Vector3(.7f, 0, 0);
         public Vector3 receptionHalfExtents = new Vector3(1.4f, 2, 1);
+        [Tooltip("Horizontal approach radius around the barista; includes off-centre approaches along the counter.")]
+        [Range(1f, 5f)] public float baristaApproachRadius = 3.2f;
         private CafeDesktopPlayer player;
         private bool greeted;
+        private bool autoGreetingDismissed;
+        private int worldClickBlockedUntilFrame;
         public bool IsInterfaceVisible => root && (root.gameObject.activeSelf || dialogueActive || waitingForReply);
         public string InteractionState => mode;
         public bool IsPreparingOrder => purchasing;
@@ -69,7 +73,8 @@ namespace VirtualCafe.Recommendation
         private CafeBeanInspection beanInspection;
         private Transform inspectedCupAnchor;
         private Transform autoSpeechAnchor;
-        public bool CanInspectCups => root && isActiveAndEnabled && !IsInterfaceVisible && !purchasing && player && !player.IsSeated;
+        public bool CanInspectCups => root && isActiveAndEnabled && !IsInterfaceVisible && !purchasing &&
+            Time.frameCount > worldClickBlockedUntilFrame && player && !player.IsSeated;
         public string HoveredCupName => beanInspection && !string.IsNullOrEmpty(beanInspection.HoverName)
             ? beanInspection.HoverName : cupInteraction ? cupInteraction.HoverName : "";
         public CafeOrderReceipt CurrentReceipt => currentReceipt;
@@ -89,6 +94,9 @@ namespace VirtualCafe.Recommendation
         public void EndPlayerInteraction()
         {
             if (!root || mode == "closed" || purchasing) return;
+            autoGreetingDismissed = true;
+            worldClickBlockedUntilFrame = Time.frameCount + 1;
+            greeted = true;
             dialogueActive = waitingForReply = false;
             inspectedCupAnchor = null;
             if (beanInspection) beanInspection.ClearSelection();
@@ -112,10 +120,28 @@ namespace VirtualCafe.Recommendation
                 if (!root || !isActiveAndEnabled || purchasing || IsInterfaceVisible) return false;
                 if (!player) player = FindObjectOfType<CafeDesktopPlayer>();
                 if (!player || player.IsSeated) return false;
-                Vector3 delta = player.transform.position - receptionCenter;
-                return Mathf.Abs(delta.x) <= receptionHalfExtents.x &&
-                    Mathf.Abs(delta.z) <= receptionHalfExtents.z;
+                return IsInReceptionRange;
             }
+        }
+        public bool IsInReceptionRange
+        {
+            get
+            {
+                if (!player) player = FindObjectOfType<CafeDesktopPlayer>();
+                return player && !player.IsSeated && InsideReception(player.transform.position, 0);
+            }
+        }
+        private bool InsideReception(Vector3 position, float margin)
+        {
+            Vector3 delta = position - receptionCenter;
+            bool originalArea = Mathf.Abs(delta.x) <= receptionHalfExtents.x + margin &&
+                Mathf.Abs(delta.z) <= receptionHalfExtents.z + margin;
+            if (originalArea) return true;
+            Transform anchor = baristaSpeechAnchor ? baristaSpeechAnchor : speechBubble ? speechBubble.baristaAnchor : null;
+            if (!anchor) return false;
+            Vector3 offset = position - anchor.position; offset.y = 0;
+            float radius = Mathf.Max(1, baristaApproachRadius) + margin;
+            return offset.sqrMagnitude <= radius * radius;
         }
         public bool TryOpenInteraction()
         {
@@ -172,11 +198,11 @@ namespace VirtualCafe.Recommendation
                     break;
                 }
             var go = new GameObject("FrontDeskTerminal", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
-            go.transform.SetParent(customerCamera.transform, false);
+            go.transform.SetParent(transform, false);
             TerminalCanvas = go.GetComponent<Canvas>();
-            TerminalCanvas.renderMode = RenderMode.ScreenSpaceCamera;
-            TerminalCanvas.worldCamera = customerCamera;
-            TerminalCanvas.planeDistance = Mathf.Max(customerCamera.nearClipPlane + .1f, .6f);
+            // Interaction windows must stay readable even when the player is very close to the counter.
+            TerminalCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            TerminalCanvas.worldCamera = null;
             TerminalCanvas.sortingOrder = 100;
             var scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -284,6 +310,8 @@ namespace VirtualCafe.Recommendation
             speechBubble.Hide(); customerBubble.Hide();
             root.gameObject.SetActive(true); TerminalCanvas.enabled = true;
             Clear(); root.sizeDelta = new Vector2(800, height);
+            if (!player) player = FindObjectOfType<CafeDesktopPlayer>();
+            if (player) player.SetUiMode(true);
             SetPointerInteraction(true);
             if (back != null) MakeButton(root, "Back", 28, 20, 100, 44, () => { if (!purchasing) back(); });
             Label(root, title, back == null ? 28 : 148, 20, back == null ? 600 : 492, 44, 29).fontStyle = FontStyle.Bold;
@@ -409,23 +437,17 @@ namespace VirtualCafe.Recommendation
         }
         public void EvaluateReception(Vector3 position, bool seated)
         {
-            if (!root) return;
-            if (inspectedCupAnchor && IsInterfaceVisible)
-            {
-                if (customerCamera && Vector3.Distance(customerCamera.transform.position, inspectedCupAnchor.position) > 4.5f)
-                    EndPlayerInteraction();
-                return;
-            }
-            Vector3 delta = position - receptionCenter;
-            bool inside = Mathf.Abs(delta.x) <= receptionHalfExtents.x && Mathf.Abs(delta.z) <= receptionHalfExtents.z;
-            bool outside = Mathf.Abs(delta.x) > receptionHalfExtents.x + .35f || Mathf.Abs(delta.z) > receptionHalfExtents.z + .35f;
+            // Once a conversation starts, crossing the approach boundary must not dismiss it.
+            // Windows already pause movement; only an explicit close/decline ends the interaction.
+            if (!root || IsInterfaceVisible) return;
+            bool inside = InsideReception(position, 0);
+            bool outside = !InsideReception(position, .35f);
             if (outside)
             {
-                if (greeted) EndPlayerInteraction();
                 greeted = false;
                 return;
             }
-            if (!inside || seated || greeted) return;
+            if (!inside || seated || greeted || autoGreetingDismissed || IsInterfaceVisible) return;
             greeted = true;
             if (!languageChosen) { ShowLanguagePicker(_ => BeginGreeting(), EndPlayerInteraction); return; }
             BeginGreeting();
@@ -875,6 +897,7 @@ namespace VirtualCafe.Recommendation
         {
             if (!root || !root.gameObject.activeSelf) return;
             var canvasRect = TerminalCanvas.GetComponent<RectTransform>();
+            Camera canvasCamera = TerminalCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : TerminalCanvas.worldCamera;
             Vector2 available = canvasRect.rect.size * .9f;
             if (available.x <= 0 || available.y <= 0) return;
             float fit = Mathf.Min(1, available.x / root.sizeDelta.x, available.y / root.sizeDelta.y);
@@ -885,7 +908,7 @@ namespace VirtualCafe.Recommendation
                 float halfW = canvasRect.rect.width * .5f, halfH = canvasRect.rect.height * .5f;
                 float cardHalfW = root.sizeDelta.x * fit * .5f, cardHalfH = root.sizeDelta.y * fit * .5f;
                 Vector3 screen = customerCamera.WorldToScreenPoint(targetBounds.center);
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, customerCamera, out var point);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, canvasCamera, out var point);
                 float x = point.x >= 0 ? -halfW + cardHalfW + 28 : halfW - cardHalfW - 28;
                 float y = -halfH + cardHalfH + 90;
                 var projected = new Rect(point.x, point.y, 0, 0);
@@ -897,7 +920,7 @@ namespace VirtualCafe.Recommendation
                 float minX=point.x, maxX=point.x, minY=point.y, maxY=point.y;
                 foreach (var corner in corners)
                 {
-                    RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, customerCamera.WorldToScreenPoint(corner), customerCamera, out var p);
+                    RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, customerCamera.WorldToScreenPoint(corner), canvasCamera, out var p);
                     minX=Mathf.Min(minX,p.x); maxX=Mathf.Max(maxX,p.x); minY=Mathf.Min(minY,p.y); maxY=Mathf.Max(maxY,p.y);
                 }
                 projected = Rect.MinMaxRect(minX - 18, minY - 18, maxX + 18, maxY + 18);
