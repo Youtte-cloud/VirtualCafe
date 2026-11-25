@@ -35,8 +35,8 @@ namespace VirtualCafe.Recommendation
         [Range(20, 200)] public float chatScrollSpeed = 75;
         public Vector3 receptionCenter = new Vector3(.7f, 0, 0);
         public Vector3 receptionHalfExtents = new Vector3(1.4f, 2, 1);
-        [Tooltip("Horizontal approach radius around the barista; includes off-centre approaches along the counter.")]
-        [Range(1f, 5f)] public float baristaApproachRadius = 3.2f;
+        [Tooltip("Horizontal interaction radius around the barista. Leave this radius plus 0.5 m to re-arm the greeting.")]
+        [Range(1f, 3f)] public float baristaApproachRadius = 2f;
         private CafeDesktopPlayer player;
         private bool greeted;
         private bool autoGreetingDismissed;
@@ -149,7 +149,7 @@ namespace VirtualCafe.Recommendation
         {
             get
             {
-                if (!root || !isActiveAndEnabled || purchasing || IsInterfaceVisible) return false;
+                if (!root || !isActiveAndEnabled || purchasing || (machineProduction && machineProduction.IsBusy) || IsInterfaceVisible) return false;
                 if (!player) player = FindObjectOfType<CafeDesktopPlayer>();
                 if (!player || player.IsSeated) return false;
                 return IsInReceptionRange;
@@ -165,13 +165,10 @@ namespace VirtualCafe.Recommendation
         }
         private bool InsideReception(Vector3 position, float margin)
         {
-            Vector3 delta = position - receptionCenter;
-            bool originalArea = Mathf.Abs(delta.x) <= receptionHalfExtents.x + margin &&
-                Mathf.Abs(delta.z) <= receptionHalfExtents.z + margin;
-            if (originalArea) return true;
             Transform anchor = baristaSpeechAnchor ? baristaSpeechAnchor : speechBubble ? speechBubble.baristaAnchor : null;
-            if (!anchor) return false;
-            Vector3 offset = position - anchor.position; offset.y = 0;
+            Vector3 center = anchor ? anchor.position : receptionCenter;
+            Vector3 offset = position - center;
+            offset.y = 0;
             float radius = Mathf.Max(1, baristaApproachRadius) + margin;
             return offset.sqrMagnitude <= radius * radius;
         }
@@ -473,13 +470,15 @@ namespace VirtualCafe.Recommendation
             // Windows already pause movement; only an explicit close/decline ends the interaction.
             if (!root || IsInterfaceVisible) return;
             bool inside = InsideReception(position, 0);
-            bool outside = !InsideReception(position, .35f);
+            bool outside = !InsideReception(position, .5f);
             if (outside)
             {
                 greeted = false;
+                autoGreetingDismissed = false;
                 return;
             }
-            if (!inside || seated || greeted || autoGreetingDismissed || IsInterfaceVisible) return;
+            if (!inside || seated || greeted || autoGreetingDismissed || purchasing ||
+                (machineProduction && machineProduction.IsBusy)) return;
             greeted = true;
             if (!languageChosen) { ShowLanguagePicker(_ => BeginGreeting(), EndPlayerInteraction); return; }
             BeginGreeting();

@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using UnityEngine;
 
@@ -55,7 +55,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
         if (initialized || !productionCup || !coffeeSurface)
             return;
 
-        // ¼ÇÂ¼³¡¾°ÖĞ±­×ÓºÍÂú±­ÒºÃæµÄÔ­Ê¼Î»ÖÃ¡£
+        // è®°å½•åœºæ™¯ä¸­æ¯å­å’Œæ»¡æ¯æ¶²é¢çš„åŸå§‹ä½ç½®ã€‚
         cupStartPosition = productionCup.position;
         cupStartRotation = productionCup.rotation;
 
@@ -75,8 +75,8 @@ public sealed class CafeMachineProduction : MonoBehaviour
                player;
     }
 
-    // ÓÉÇ°Ì¨¹Ø±Õµãµ¥½çÃæºóµ÷ÓÃ¡£
-    // ¶¯»­ÔËĞĞÔÚ±¾×é¼şÉÏ£¬²»×èÈû¶©µ¥Ò³Ãæ¡£
+    // ç”±å‰å°å…³é—­ç‚¹å•ç•Œé¢åè°ƒç”¨ã€‚
+    // åŠ¨ç”»è¿è¡Œåœ¨æœ¬ç»„ä»¶ä¸Šï¼Œä¸é˜»å¡è®¢å•é¡µé¢ã€‚
     public bool BeginProduction(string pickupNumber)
     {
         Initialize();
@@ -91,7 +91,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
         }
 
         productionPickupNumber = pickupNumber;
-        productionMessage = "ÕıÔÚÖÆ×÷¿§·È£¬ÇëÉÔºò¡­";
+        productionMessage = "æ­£åœ¨åˆ¶ä½œå’–å•¡ï¼Œè¯·ç¨å€™â€¦";
         productionStartedAt = Time.unscaledTime;
         readyNotice = false;
 
@@ -134,8 +134,8 @@ public sealed class CafeMachineProduction : MonoBehaviour
 
             setStatus?.Invoke("Preparing your drink...");
 
-            // ÑØÊÀ½çÊúÖ±·½Ïò½µµÍÒºÃæ£¬
-            // ²»ÒÀÀµµ¼ÈëÄ£ĞÍµÄ±¾µØÖáÏò¡£
+            // æ²¿ä¸–ç•Œç«–ç›´æ–¹å‘é™ä½æ¶²é¢ï¼Œ
+            // ä¸ä¾èµ–å¯¼å…¥æ¨¡å‹çš„æœ¬åœ°è½´å‘ã€‚
             Vector3 emptySurface =
                 surfaceStartPosition -
                 Vector3.up * Mathf.Max(0f, liquidRiseHeight);
@@ -156,7 +156,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
             float seconds = Mathf.Max(0.1f, brewingDuration);
             float elapsed = 0f;
 
-            // ÖÆ×÷ÖĞ£ºÒºÃæÖğ½¥Éı¸ß¡£
+            // åˆ¶ä½œä¸­ï¼šæ¶²é¢é€æ¸å‡é«˜ã€‚
             while (elapsed < seconds)
             {
                 elapsed += Time.unscaledDeltaTime;
@@ -182,14 +182,14 @@ public sealed class CafeMachineProduction : MonoBehaviour
 
             yield return new WaitForSecondsRealtime(0.5f);
 
-            // °´±­µ×¶ÔÆëÈ¡²Í¶¨Î»µã¡£
+            // æŒ‰æ¯åº•å¯¹é½å–é¤å®šä½ç‚¹ã€‚
             Vector3 bottom = FindCupBottom();
             Vector3 movement = pickupAnchor.position - bottom;
 
             seconds = Mathf.Max(0.1f, transferDuration);
             elapsed = 0f;
 
-            // ±­ÉíºÍÒºÃæÒ»ÆğÒÆ¶¯µ½È¡²ÍÇø¡£
+            // æ¯èº«å’Œæ¶²é¢ä¸€èµ·ç§»åŠ¨åˆ°å–é¤åŒºã€‚
             while (elapsed < seconds)
             {
                 elapsed += Time.unscaledDeltaTime;
@@ -223,7 +223,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
 
             yield return null;
 
-            // ¶ÀÁ¢µÈ´ıÍæ¼ÒÈ¡²Í¡£
+            // ç‹¬ç«‹ç­‰å¾…ç©å®¶å–é¤ã€‚
             while (true)
             {
                 if (!player || !pickupAnchor)
@@ -346,12 +346,12 @@ public sealed class CafeMachineProduction : MonoBehaviour
         {
             case "Preparing your drink...":
                 productionMessage =
-                    "ÕıÔÚÖÆ×÷¿§·È£¬ÇëÉÔºò¡­";
+                    "æ­£åœ¨åˆ¶ä½œå’–å•¡ï¼Œè¯·ç¨å€™â€¦";
                 break;
 
             case "Your drink is ready!":
                 productionMessage =
-                    "¿§·ÈÖÆ×÷Íê³É£¬ÕıÔÚËÍÍùÈ¡²ÍÇø¡­";
+                    "å’–å•¡åˆ¶ä½œå®Œæˆï¼Œæ­£åœ¨é€å¾€å–é¤åŒºâ€¦";
 
                 readyNotice = true;
                 noticeStartedAt = Time.unscaledTime;
@@ -359,17 +359,17 @@ public sealed class CafeMachineProduction : MonoBehaviour
 
             case "Your drink is at the pickup counter.":
                 productionMessage =
-                    "¿§·ÈÒÑÖÆ×÷Íê³É£¬Çëµ½È¡²ÍÇøÁìÈ¡";
+                    "å’–å•¡å·²åˆ¶ä½œå®Œæˆï¼Œè¯·åˆ°å–é¤åŒºé¢†å–";
                 break;
 
             case "Press E to pick up your drink.":
                 productionMessage =
-                    "¿§·ÈÒÑÖÆ×÷Íê³É£¬°´ E ÁìÈ¡";
+                    "å’–å•¡å·²åˆ¶ä½œå®Œæˆï¼ŒæŒ‰ E é¢†å–";
                 break;
 
             case "Enjoy your coffee!":
                 productionMessage =
-                    "È¡²Í³É¹¦£¬×£ÄãÏíÓÃÓä¿ì£¡";
+                    "å–é¤æˆåŠŸï¼Œç¥ä½ äº«ç”¨æ„‰å¿«ï¼";
                 break;
         }
     }
@@ -452,7 +452,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
 
         Color previousColor = GUI.color;
 
-        // ÄÌÓÍÉ«ÌáÊ¾¿¨±³¾°¡£
+        // å¥¶æ²¹è‰²æç¤ºå¡èƒŒæ™¯ã€‚
         GUI.color = new Color(
             0.97f,
             0.94f,
@@ -491,7 +491,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
                 panel.width - 24f,
                 panel.height * 0.3f
             ),
-            "È¡²ÍºÅ£º" + productionPickupNumber,
+            "å–é¤å·ï¼š" + productionPickupNumber,
             numberStyle
         );
 
