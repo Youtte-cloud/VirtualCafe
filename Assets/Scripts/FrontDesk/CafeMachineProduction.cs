@@ -47,6 +47,21 @@ public sealed class CafeMachineProduction : MonoBehaviour
     public AudioClip brewingSound;
     public AudioClip readySound;
 
+    [Header("Grinder animation")]
+    public CafeGrinderAnimation grinderAnimation;
+
+    [Header("Grounds transfer animation")]
+    public CafeGroundsTransferAnimation groundsTransferAnimation;
+
+    [Header("Grounds pouring animation")]
+    public CafeGroundsPourAnimation groundsPourAnimation;
+
+    [Header("Bean pouring animation")]
+    public CafeBeanPourAnimation beanPourAnimation;
+
+    [Header("Milk pouring animation")]
+    public CafeMilkPourAnimation milkPourAnimation;
+
     public bool IsBusy { get; private set; }
 
     private Vector3 cupStartPosition;
@@ -365,6 +380,42 @@ public sealed class CafeMachineProduction : MonoBehaviour
         {
             for (int i = 0; i < specs.Count; i++)
             {
+                SetMessage(L(
+                    "Adding coffee beans {0} / {1}",
+                    "正在加入咖啡豆，第 {0} / {1} 杯",
+                    "コーヒー豆を入れています {0} / {1}",
+                    i + 1,
+                    specs.Count));
+
+                if (beanPourAnimation)
+                    yield return beanPourAnimation.PlayPour(specs[i].beanId);
+
+                SetMessage(L(
+                    "Grinding beans {0} / {1}",
+                    "正在磨豆，第 {0} / {1} 杯",
+                    "豆を挽いています {0} / {1}",
+                    i + 1,
+                    specs.Count));
+
+                if (grinderAnimation)
+                    yield return grinderAnimation.Grind();
+
+                SetMessage(L(
+                    "Transferring coffee grounds...",
+                    "正在收集咖啡粉…",
+                    "コーヒー粉を移しています…"));
+
+                if (groundsTransferAnimation)
+                    yield return groundsTransferAnimation.PlayTransfer();
+
+                SetMessage(L(
+                    "Loading coffee grounds...",
+                    "正在向滤篮装入咖啡粉…",
+                    "フィルターにコーヒー粉を入れています…"));
+
+                if (groundsPourAnimation)
+                    yield return groundsPourAnimation.PlayPour();
+
                 RestoreParts();
 
                 productionCup.gameObject.SetActive(true);
@@ -415,6 +466,17 @@ public sealed class CafeMachineProduction : MonoBehaviour
 
                 coffeeStream.SetActive(false);
                 StopSound();
+
+                // 只有拿铁播放倒奶动画。
+                if (specs[i].isLatte && milkPourAnimation)
+                {
+                    SetMessage(L(
+                        "Adding milk...",
+                        "正在加入牛奶…",
+                        "ミルクを注いでいます…"));
+
+                    yield return milkPourAnimation.Pour();
+                }
 
                 GameObject cup = CreateCup(specs[i]);
                 finishedCups.Add(cup);
@@ -518,6 +580,17 @@ public sealed class CafeMachineProduction : MonoBehaviour
         }
         finally
         {
+            if (milkPourAnimation)
+                milkPourAnimation.ResetAnimation();
+
+            if (beanPourAnimation)
+                beanPourAnimation.ResetAnimation();
+
+            if (groundsPourAnimation)
+                groundsPourAnimation.ResetAnimation();
+
+            if (groundsTransferAnimation)
+                groundsTransferAnimation.ResetAnimation();
             StopSound();
             HideParts();
             RestoreParts();
@@ -874,6 +947,17 @@ public sealed class CafeMachineProduction : MonoBehaviour
 
     private void OnDisable()
     {
+        if (milkPourAnimation)
+            milkPourAnimation.ResetAnimation();
+
+        if (beanPourAnimation)
+            beanPourAnimation.ResetAnimation();
+
+        if (groundsPourAnimation)
+            groundsPourAnimation.ResetAnimation();
+
+        if (groundsTransferAnimation)
+            groundsTransferAnimation.ResetAnimation();
         StopAllCoroutines();
         StopSound();
         HideParts();
