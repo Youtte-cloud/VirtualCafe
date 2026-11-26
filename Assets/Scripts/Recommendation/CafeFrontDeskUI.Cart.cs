@@ -10,6 +10,23 @@ namespace VirtualCafe.Recommendation
     public sealed partial class CafeFrontDeskUI
     {
         private readonly List<MenuSelection> cart = new List<MenuSelection>();
+        private bool cartRefreshPending;
+#if UNITY_EDITOR
+        // Temporary diagnostics; reads the shared in-memory stock without reloading its file.
+        private void LogCartInventoryDebug(string stage, string details)
+        {
+            try
+            {
+                Debug.Log("[CartInventoryDebug] " + stage + " | " + details +
+                    " | stock=" + CafeRuntimeServices.Inventory.GetInventoryJson(), this);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[CartInventoryDebug] " + stage +
+                    " | diagnostics unavailable: " + e.GetType().Name, this);
+            }
+        }
+#endif
         private int CartCupCount
         {
             get
@@ -51,6 +68,37 @@ namespace VirtualCafe.Recommendation
             return result;
         }
 
+        private string IncompleteSelectionMessage => CartText("Please complete your selection.", "请完成选择。", "選択を完了してください。");
+        private string StockMessage => CartText("Insufficient stock.", "库存不足", "在庫不足です。");
+
+        private string OrderFailureMessage(string reason)
+        {
+            if (!string.IsNullOrEmpty(reason) && reason.StartsWith("Insufficient stock", StringComparison.Ordinal))
+                return StockMessage;
+            return CartText("Unable to place this order. Please try again.", "暂时无法下单，请重试。", "注文できません。もう一度お試しください。");
+        }
+
+        // Read-only quote for the whole basket plus the proposed selection; never reserves stock.
+        private bool CanAddSelection(MenuSelection selection, out string reason)
+        {
+            var candidate = CopyCart();
+            candidate.Add(CanonicalCopy(selection));
+            return ValidateCart(candidate, out _, out _, out reason);
+        }
+
+        private void RefreshAddToCartState(bool selected, bool busy)
+        {
+            if (!confirm || purchased || purchasing) return;
+            var selection = reception.menuAdapter.CurrentSelection;
+            var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == selection.MenuItemId);
+            string reason = IncompleteSelectionMessage;
+            bool complete = selected && CafeUiSelectionRules.MissingOptions(selection, item, cupChosen, beanChosen, milkChosen).Length == 0;
+            bool available = complete && CanAddSelection(selection, out reason);
+            confirm.interactable = available && !busy && !validationPopup;
+            SetUnavailableAppearance(confirm, !available);
+            if (status) status.text = busy ? CafeUiLocalization.Text("Checking the latest menu. Please wait...") : available ? "" : reason;
+        }
+
         private void AddCurrentSelectionToCart()
         {
             if (purchasing || purchased || validationPopup || pendingMachineProduction) return;
@@ -60,7 +108,7 @@ namespace VirtualCafe.Recommendation
             var missing = CafeUiSelectionRules.MissingOptions(current, item, cupChosen, beanChosen, milkChosen);
             if (missing.Length > 0)
             {
-                ShowValidationPopup(CartText("Please select: {0}", "请先选择：{0}", "選択してください：{0}", string.Join(", ", missing)));
+                ShowValidationPopup(IncompleteSelectionMessage);
                 return;
             }
             var entry = CanonicalCopy(current);
@@ -90,15 +138,21 @@ namespace VirtualCafe.Recommendation
             cents = count = 0;
             if (!CafeRuntimeServices.Menu.TryGetOrderQuote(entries, out cents, out count, out reason))
             {
-                reason = CartText("Order unavailable: {0}", "订单暂不可制作：{0}", "注文できません：{0}", DisplayEnglish(reason));
+                reason = OrderFailureMessage(reason);
                 return false;
             }
             if (!machineProduction)
             {
-                reason = CartText("Production setup is incomplete.", "制作组件绑定不完整。", "製作設定が不完全です。");
+                reason = CartText("Production is unavailable. Please try later.", "暂时无法制作，请稍后再试。", "現在製作できません。しばらくお待ちください。");
                 return false;
             }
-            if (!machineProduction.CanAcceptOrder(count, out reason)) return false;
+            if (!machineProduction.CanAcceptOrder(count, out reason))
+            {
+                reason = count > machineProduction.OrderCapacity
+                    ? CartText("Production capacity reached. Reduce the quantity.", "制作容量不足，请减少杯数。", "製作上限です。数量を減らしてください。")
+                    : CartText("Production is unavailable. Please try later.", "暂时无法制作，请稍后再试。", "現在製作できません。しばらくお待ちください。");
+                return false;
+            }
             return true;
         }
 
@@ -143,6 +197,10 @@ namespace VirtualCafe.Recommendation
         private void ShowCart()
         {
             if (purchasing || KeepPendingReceiptVisible()) return;
+#if UNITY_EDITOR
+            bool processingInventoryRefresh = cartRefreshPending && mode == "cart";
+#endif
+            cartRefreshPending = false;
             mode = "cart"; browsingMenu = true;
             StopVoice(); recommendation.CancelSession();
             int bodyHeight = Mathf.Max(160, cart.Count * 132);
@@ -157,7 +215,17 @@ namespace VirtualCafe.Recommendation
                 if (CafeRuntimeServices.Menu.TryGetPrice(entry, out var price, out _))
                     Label(panel, "CNY " + (price.totalPriceCents / 100m).ToString("0.00"), 14, 82, 320, 30, 20);
                 MakeButton(panel, "−", 530, 12, 54, 42, () => ChangeCartQuantity(row, -1));
-                MakeButton(panel, "+", 596, 12, 54, 42, () => ChangeCartQuantity(row, 1));
+                var increase = MakeButton(panel, "+", 596, 12, 54, 42, () => ChangeCartQuantity(row, 1));
+                var candidate = CopyCart();
+                bool canIncrease = false;
+                try
+                {
+                    candidate[row].Servings = checked(candidate[row].Servings + 1);
+                    canIncrease = ValidateCart(candidate, out _, out _, out _);
+                }
+                catch (OverflowException) { }
+                increase.interactable = canIncrease;
+                SetUnavailableAppearance(increase, !canIncrease);
                 MakeButton(panel, CartText("Remove", "删除", "削除"), 530, 66, 120, 40,
                     () => { cart.RemoveAt(row); ShowCart(); });
             }
@@ -186,6 +254,13 @@ namespace VirtualCafe.Recommendation
             MakeButton(root, CartText("Add another drink", "继续选购", "ドリンクを追加"), 28, footer + 118, 360, 56, ContinueCartShopping);
             confirm = MakeButton(root, CartText("Confirm entire order", "确认整单", "注文を確定"), 412, footer + 118, 360, 56, Purchase);
             confirm.interactable = valid;
+            SetUnavailableAppearance(confirm, !valid);
+#if UNITY_EDITOR
+            LogCartInventoryDebug(processingInventoryRefresh ? "ShowCart refreshed" : "ShowCart opened",
+                "orderAvailable=" + valid + " | reason=" + reason +
+                " | confirmInteractable=" + confirm.interactable +
+                " | cartRefreshPending=" + cartRefreshPending);
+#endif
         }
 
         private void PurchaseCart()
@@ -202,7 +277,7 @@ namespace VirtualCafe.Recommendation
             {
                 var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == selection.MenuItemId);
                 if (item == null || !CafeRuntimeServices.Menu.TryGetPrice(selection, out var price, out reason))
-                { ShowValidationPopup(reason ?? "Invalid drink."); return; }
+                { ShowValidationPopup(OrderFailureMessage(reason)); return; }
                 rows.Add(new CafeOrderLine {
                     selection = CopySelection(selection), drinkName = item.name,
                     beanName = string.IsNullOrEmpty(selection.BeanId) ? "" : Name(selection.BeanId),
@@ -223,7 +298,7 @@ namespace VirtualCafe.Recommendation
                 // One call for the ENTIRE basket, never one call per row.
                 if (!CafeRuntimeServices.Menu.TryConfirmOrder(snapshot, out reason))
                 {
-                    if (status) status.text = DisplayEnglish(reason);
+                    if (status) status.text = OrderFailureMessage(reason);
                     return;
                 }
                 committed = true;

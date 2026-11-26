@@ -293,7 +293,17 @@ namespace VirtualCafe.Recommendation
             if (sharedMenu != null) sharedMenu.InventoryChanged -= InventoryChanged;
             if (TerminalCanvas) Destroy(TerminalCanvas.gameObject);
         }
-        private void InventoryChanged() { dirty = true; RefreshMenuOffers(); }
+        private void InventoryChanged()
+        {
+            dirty = true;
+            cartRefreshPending = true;
+#if UNITY_EDITOR
+            LogCartInventoryDebug("InventoryChanged",
+                "mode=" + mode + " | purchasing=" + purchasing +
+                " | cartRefreshPending=" + cartRefreshPending);
+#endif
+            RefreshMenuOffers();
+        }
         private void OnReply(string value)
         {
             if (mode != "recommendation" || purchasing) return;
@@ -714,8 +724,9 @@ namespace VirtualCafe.Recommendation
             if (recommendation.CurrentRecommendation == null) { ShowPreferenceInput(); return; }
             ActionWindow("What would you like to do?", 350, ShowPreferenceInput);
             var adapter = reception.menuAdapter;
-            Label(root, DisplayEnglish(adapter.PriceText) + " / " + DisplayEnglish(adapter.StatusText), 28, 78, 744, 45, 24);
-            MakeButton(root, "Choose this drink", 28, 140, 360, 60, ReviewOrder);
+            status = Label(root, "", 28, 78, 744, 45, 24);
+            confirm = MakeButton(root, "Choose this drink", 28, 140, 360, 60, ReviewOrder);
+            RefreshAddToCartState(true, false);
             MakeButton(root, "Adjust size / ingredients", 412, 140, 360, 60, ShowConfiguration);
             MakeButton(root, "Another recommendation", 28, 225, 360, 60, () => SubmitRequest(true, false));
             MakeButton(root, "Tell you more", 412, 225, 360, 60, ShowPreferenceInput);
@@ -828,6 +839,13 @@ namespace VirtualCafe.Recommendation
                 customerBubble.fallbackPosition = player.transform.position + Vector3.up * 1.95f;
             if (player) EvaluateReception(player.transform.position, player.IsSeated);
             if (purchasing || dialogueActive || waitingForReply || !root.gameObject.activeSelf) return;
+            if (mode == "cart")
+            {
+                // Defer rebuilding until inventory event delivery and purchase callbacks finish.
+                if (cartRefreshPending && !pendingMachineProduction && !validationPopup)
+                    ShowCart();
+                return;
+            }
             if (mode != "order" && mode != "recommendation") return;
             bool voiceBusy = speech && speech.Active && speech.IsBusy;
             bool busy = recommendation.IsBusy || voiceBusy;
@@ -855,16 +873,10 @@ namespace VirtualCafe.Recommendation
             if (send) send.interactable = !busy;
             if (another) another.interactable = !busy;
             if (input) input.interactable = !busy;
-            var current = reception.menuAdapter.CurrentSelection;
-            var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == current.MenuItemId);
-            bool incomplete = CafeUiSelectionRules.MissingOptions(current, item, cupChosen, beanChosen, milkChosen).Length > 0;
-            if (confirm) confirm.interactable = !validationPopup && !busy && selected && !purchased && !purchasing &&
-                (incomplete || reception.menuAdapter.CanConfirm);
-            if (busy && status) status.text = CafeUiLocalization.Text("Checking the latest menu. Please wait...");
-            else if (status && status.text == CafeUiLocalization.Text("Checking the latest menu. Please wait...")) status.text = mode == "recommendation" ? DisplayEnglish(recommendation.ErrorText) : "";
             foreach (var b in configurationButtons) if (b)
                     b.interactable = !busy && !purchased && (!optionAvailability.TryGetValue(b, out bool allowed) || allowed);
             if (dirty && options) { dirty = false; DrawSelection(selected); }
+            RefreshAddToCartState(selected, busy);
         }
         private void LateUpdate()
         {
@@ -933,7 +945,7 @@ namespace VirtualCafe.Recommendation
             if (beanChoiceProduct != s.MenuItemId) { beanChoiceProduct = s.MenuItemId; beanChosen = cupChosen = milkChosen = true; }
             selectionText.text = DisplayEnglish(item.name) + " × " + s.Servings + " · " + (cupChosen ? s.CupSizeMl + "ml" : "Select a cup size") + " · " + adapter.PriceText + "\n" +
                 (beanChosen ? Name(string.IsNullOrEmpty(s.BeanId) ? item.beanIds[0] : s.BeanId) : "Select a coffee bean") +
-                (item.milkIds.Length == 0 ? " / No milk" : !milkChosen ? " / Select milk" : " · " + Name(s.MilkId)) + " · " + (cupChosen && beanChosen && (item.milkIds.Length == 0 || milkChosen) ? DisplayEnglish(adapter.StatusText) : "Selection incomplete");
+                (item.milkIds.Length == 0 ? " / No milk" : !milkChosen ? " / Select milk" : " · " + Name(s.MilkId)) + " · " + (cupChosen && beanChosen && (item.milkIds.Length == 0 || milkChosen) ? CartText("Selection complete", "已完成选择", "選択済み") : "Selection incomplete");
             selectionText.text = CafeUiLocalization.Text(selectionText.text);
             Label(options, "Cup size", 0, 0, 90, 48, 22).alignment = TextAnchor.MiddleLeft;
             int x = 100;
@@ -979,6 +991,7 @@ namespace VirtualCafe.Recommendation
             minusButton.interactable = canDecrease;
             configurationButtons.Add(minusButton);
             optionAvailability[minusButton] = canDecrease;
+            SetUnavailableAppearance(minusButton, !canDecrease);
 
             Label(
                 options,
@@ -1012,12 +1025,7 @@ namespace VirtualCafe.Recommendation
             {
                 var quantityCandidate = CopySelection(s);
                 quantityCandidate.Servings = s.Servings + 1;
-                // 数量按钮直接检查整单库存，
-                // 不走杯型、豆、奶的通用选项判断。
-                bool canAddCup = CafeRuntimeServices.Menu.IsAvailable(
-                    quantityCandidate,
-                    out string addCupReason
-                );
+                bool canAddCup = CanAddSelection(quantityCandidate, out _);
 
                 plusButton.interactable = canAddCup;
                 optionAvailability[plusButton] = canAddCup;
@@ -1027,6 +1035,7 @@ namespace VirtualCafe.Recommendation
 
 
             }
+            SetUnavailableAppearance(plusButton, !plusButton.interactable);
             Label(options, "Beans", 0, 68, 90, 48, 22).alignment = TextAnchor.MiddleLeft;
             x = 100;
             string activeBean = string.IsNullOrEmpty(s.BeanId) ? item.beanIds[0] : s.BeanId;
@@ -1087,7 +1096,7 @@ namespace VirtualCafe.Recommendation
             DrawRecipe(s, item);
             if (unavailableReasons.Count > 0)
             {
-                var reasonText = Label(options, "Sold out: " + string.Join(", ", unavailableReasons) + ". Other available options can still be ordered.", 0, 374, 740, 52, 18);
+                var reasonText = Label(options, CartText("Some options cannot be added to this order.", "部分选项暂时无法加入订单。", "一部の選択肢は注文に追加できません。"), 0, 374, 740, 52, 18);
                 reasonText.color = new Color(.47f, .38f, .28f);
             }
         }
@@ -1095,7 +1104,7 @@ namespace VirtualCafe.Recommendation
         {
             var card = Box(options, "Recipe amounts", 0, 206, 740, 156);
             card.gameObject.AddComponent<Image>().color = new Color(.95f, .90f, .81f);
-            var heading = Label(card, "RECIPE / PER CUP", 20, 14, 700, 28, 18);
+            var heading = Label(card, CartText("YOUR INGREDIENTS", "所选原料", "選択した材料"), 20, 14, 700, 28, 18);
             heading.fontStyle = FontStyle.Bold;
             if (CafeUiSelectionRules.MissingOptions(selection, item, cupChosen, beanChosen, milkChosen).Length > 0)
             {
@@ -1107,26 +1116,12 @@ namespace VirtualCafe.Recommendation
                 Label(card, "Recipe details are unavailable for this selection.", 20, 58, 700, 70, 22);
                 return;
             }
-            // Definitions and quantities come from the same read-only service as pricing.
-            var ingredients = new List<string>();
-            foreach (var requirement in recipe.requirements)
-            {
-                string id = requirement.source == "bean"
-                    ? (string.IsNullOrEmpty(selection.BeanId) ? item.beanIds[0] : selection.BeanId)
-                    : requirement.source == "milk" ? selection.MilkId : requirement.itemId;
-                var definition = CafeRuntimeServices.Inventory.GetItemDefinition(id);
-                ingredients.Add(DisplayEnglish(definition.name) + "  " + requirement.quantity + " " + definition.unit);
-            }
-            // Two columns keep bean and milk amounts readable without a dense sentence.
-            Label(card, ingredients.Count > 0 ? ingredients[0] : "", 20, 52, 340, 48, 23);
-            Label(card, ingredients.Count > 1 ? string.Join(" / ", ingredients.GetRange(1, ingredients.Count - 1)) : "No milk", 380, 52, 340, 48, 23);
-            var preparation = new List<string>();
-            if (recipe.extractionTargetG > 0) preparation.Add("Espresso yield " + recipe.extractionTargetG + " g");
-            if (recipe.waterMl > 0) preparation.Add("Water " + recipe.waterMl + " ml");
-            if (recipe.iceG > 0) preparation.Add("Ice " + recipe.iceG + " g");
-            var targets = Label(card, string.Join("  /  ", preparation), 20, 110, 700, 32, 18);
-            targets.color = new Color(.47f, .38f, .28f);
+            string bean = string.IsNullOrEmpty(selection.BeanId) ? item.beanIds[0] : selection.BeanId;
+            Label(card, Name(bean), 20, 52, 340, 48, 23);
+            Label(card, string.IsNullOrEmpty(selection.MilkId) ? CafeUiLocalization.Text("No milk") : Name(selection.MilkId),
+                380, 52, 340, 48, 23);
         }
+
         private static MenuSelection CopySelection(MenuSelection s) => new MenuSelection
         {
             MenuItemId = s.MenuItemId,
@@ -1137,16 +1132,16 @@ namespace VirtualCafe.Recommendation
         };
         private void ConfigureAvailability(Button button, MenuSelection candidate, string name, string dimension, List<string> reasons)
         {
-            // Test this option across legal combinations, not against an unrelated
-            // exhausted ingredient in the current selection. Do not change selection.
+            // Keep already chosen dimensions; only unfinished choices may vary.
+            // Quote the whole cart plus this option without changing either selection.
             bool available = CafeUiSelectionRules.HasAvailableOption(CafeRuntimeServices.Menu.GetMenuOffers(),
-                candidate, dimension, test => CafeRuntimeServices.Menu.IsAvailable(test, out _));
+                CanonicalCopy(candidate), dimension, test => CanAddSelection(test, out _), cupChosen, beanChosen, milkChosen);
             optionAvailability[button] = available;
             button.interactable = available && !recommendation.IsBusy && !purchased;
             if (available) return;
-            MarkSelected(button, false);
+            SetUnavailableAppearance(button, true);
             var label = button.GetComponentInChildren<Text>();
-            label.text += "\n" + CafeUiLocalization.Text("Sold out"); label.fontSize = 17; label.resizeTextMaxSize = 17; label.resizeTextMinSize = 14;
+            label.text += "\n" + CartText("Unavailable", "暂不可选", "選択できません"); label.fontSize = 17; label.resizeTextMaxSize = 17; label.resizeTextMinSize = 14;
             string detail = name;
             if (!reasons.Contains(detail)) reasons.Add(detail);
         }
@@ -1164,7 +1159,7 @@ namespace VirtualCafe.Recommendation
                 {
                     if (offer.selection.MenuItemId != item.id) continue;
                     minimum = Math.Min(minimum, offer.price.unitPriceCents);
-                    if (offer.available) { anyAvailable = true; availableMinimum = Math.Min(availableMinimum, offer.price.unitPriceCents); }
+                    if (CanAddSelection(offer.selection, out _)) { anyAvailable = true; availableMinimum = Math.Min(availableMinimum, offer.price.unitPriceCents); }
                     else reason = offer.reason;
                 }
                 int price = anyAvailable ? availableMinimum : minimum;
@@ -1172,9 +1167,10 @@ namespace VirtualCafe.Recommendation
                 button.GetComponentInChildren<Text>().text = DisplayEnglish(item.name);
                 var priceLabel = button.transform.Find("MenuPrice");
                 if (priceLabel) priceLabel.GetComponent<Text>().text = anyAvailable
-                    ? priceText : CafeUiLocalization.Text("Sold out");
+                    ? priceText : CartText("Cannot add to order", "暂时无法加入订单", "注文に追加できません");
                 button.interactable = anyAvailable;
                 button.GetComponent<Image>().color = anyAvailable ? new Color(.85f, .73f, .56f) : new Color(.78f, .77f, .74f);
+                if (!anyAvailable) SetUnavailableAppearance(button, true);
             }
         }
         private void ShowValidationPopup(string message)
@@ -1186,13 +1182,28 @@ namespace VirtualCafe.Recommendation
             overlay.SetAsLastSibling(); // The raycastable overlay blocks all controls behind the dialog.
             var card = Box(overlay, "Dialog", (root.sizeDelta.x - 600) / 2, (root.sizeDelta.y - 270) / 2, 600, 270);
             card.gameObject.AddComponent<Image>().color = new Color(.99f, .95f, .87f);
-            Label(card, "Complete your selection", 30, 25, 540, 45, 30);
+            Label(card, CartText("Please check your order", "请检查订单", "注文内容をご確認ください"), 30, 25, 540, 45, 30);
             Label(card, message, 30, 90, 540, 65, 25);
             MakeButton(card, "Back to options", 30, 190, 540, 52, () => {
                 overlay.gameObject.SetActive(false);
                 Destroy(overlay.gameObject);
                 validationPopup = null;
             });
+        }
+
+        private static void SetUnavailableAppearance(Button button, bool unavailable)
+        {
+            var colors = button.colors;
+            colors.disabledColor = new Color(.62f, .62f, .62f);
+            button.colors = colors;
+            if (!unavailable)
+            {
+                button.GetComponent<Image>().color = new Color(.88f, .78f, .63f);
+                button.GetComponentInChildren<Text>().color = new Color(.30f, .29f, .27f);
+                return;
+            }
+            button.GetComponent<Image>().color = new Color(.68f, .68f, .68f);
+            button.GetComponentInChildren<Text>().color = new Color(.25f, .25f, .25f);
         }
 
         private static void MarkSelected(Button button, bool selected)

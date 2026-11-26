@@ -22,7 +22,7 @@ namespace VirtualCafe.Recommendation
         }
 
         internal static bool HasAvailableOption(MenuOffer[] offers, MenuSelection candidate, string dimension,
-            Func<MenuSelection, bool> canMake)
+            Func<MenuSelection, bool> canMake, bool cupChosen = false, bool beanChosen = false, bool milkChosen = false)
         {
             if (candidate == null || offers == null || canMake == null) return false;
             if (dimension != "cup" && dimension != "bean" && dimension != "milk") return false;
@@ -33,6 +33,9 @@ namespace VirtualCafe.Recommendation
                 if (dimension == "cup" && option.CupSizeMl != candidate.CupSizeMl) continue;
                 if (dimension == "bean" && option.BeanId != candidate.BeanId) continue;
                 if (dimension == "milk" && option.MilkId != candidate.MilkId) continue;
+                if (dimension != "cup" && cupChosen && option.CupSizeMl != candidate.CupSizeMl) continue;
+                if (dimension != "bean" && beanChosen && option.BeanId != candidate.BeanId) continue;
+                if (dimension != "milk" && milkChosen && option.MilkId != candidate.MilkId) continue;
                 var test = new MenuSelection { MenuItemId=option.MenuItemId, CupSizeMl=option.CupSizeMl,
                     BeanId=option.BeanId, MilkId=option.MilkId, Servings=candidate.Servings };
                 if (canMake(test)) return true;
