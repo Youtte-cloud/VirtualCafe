@@ -147,6 +147,74 @@ namespace VirtualCafe.Inventory
             return inventory.TryConfirmOrder(drinks, out reason);
         }
 
+        // 只读检查购物车：计算总价、总杯数、合计原料需求。
+        // 不扣库存、不生成取餐号。
+        public bool TryGetOrderQuote(
+            IReadOnlyList<MenuSelection> selections,
+            out int totalPriceCents,
+            out int totalServings,
+            out string reason)
+        {
+            totalPriceCents = 0;
+            totalServings = 0;
+            reason = "Order cannot be empty.";
+
+            if (selections == null || selections.Count == 0)
+                return false;
+
+            var drinks = new List<DrinkRequest>();
+
+            int price = 0;
+            int servings = 0;
+
+            try
+            {
+                foreach (var selection in selections)
+                {
+                    if (!TryResolve(
+                            selection,
+                            out var drink,
+                            out reason))
+                    {
+                        return false;
+                    }
+
+                    if (!TryGetPrice(
+                            selection,
+                            out var quote,
+                            out reason))
+                    {
+                        return false;
+                    }
+
+                    price = checked(price + quote.totalPriceCents);
+                    servings = checked(servings + drink.Servings);
+
+                    drinks.Add(drink);
+                }
+            }
+            catch (OverflowException)
+            {
+                reason = "Order quantity or price exceeds the supported range.";
+                return false;
+            }
+
+            // 必须检查合计库存：
+            // 分别能做一杯，不代表库存足够同时做这两杯。
+            if (!inventory.TryGetOrderRequirements(
+                    drinks,
+                    out _,
+                    out reason))
+            {
+                return false;
+            }
+
+            totalPriceCents = price;
+            totalServings = servings;
+            reason = "Success";
+            return true;
+        }
+
         public MenuOffer[] GetMenuOffers()
         {
             var offers = new List<MenuOffer>();
