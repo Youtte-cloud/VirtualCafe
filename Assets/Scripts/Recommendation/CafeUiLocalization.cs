@@ -71,6 +71,7 @@ namespace VirtualCafe.Recommendation
             { "Send", "发送", "送信" },
             { "View menu", "查看菜单", "メニュー" },
             { "Of course. Here is our menu.", "当然，这是我们的菜单。", "もちろんです。こちらがメニューです。" },
+            { "Resend", "重新发送", "再送信" },
             { "Retry", "重试", "再試行" },
             { "Speak", "说话", "話す" },
             { "Language", "语言", "言語" },

@@ -85,9 +85,9 @@ namespace VirtualCafe.Recommendation.Editor
                 Check(!ui.GetComponentsInChildren<Button>().Any(b => b.isActiveAndEnabled && b.name == "Continue"), "Greeting bubble is dismissed before choices appear");
 
                 Click(Button("Order by voice"));
-                yield return WaitFor(() => RawButton(CafeSpeechConversation.LanguageNames[language]), "Voice language choices");
-                Click(RawButton(CafeSpeechConversation.LanguageNames[language]));
-                Check(speech.Active && speech.LanguageIndex == language, "Voice input uses selected language");
+                Check(!RawButton(CafeSpeechConversation.LanguageNames[language]), "Voice entry does not repeat language selection");
+                Check(speech.Active && speech.LanguageIndex == language, "Voice input reuses the previously selected language");
+                Check(ui.recommendation.ConversationLanguage == CafeUiLocalization.LanguageCode, "Barista replies use the same selected language");
                 Check(!speech.IsBusy && !speech.IsRecording && !speech.NeedsConfiguration, "Opening voice dialogue requires no recording or service request");
                 yield return WaitFor(() => Button("Speak") && Button("Send"), "Voice preference input");
                 Check(ui.InteractionState == "recommendation", "Preference input uses shared recommendation flow");
@@ -101,6 +101,30 @@ namespace VirtualCafe.Recommendation.Editor
 
                 var field = ui.TerminalCanvas.GetComponentsInChildren<InputField>().Single(f => f.isActiveAndEnabled);
                 field.text = "UI check draft";
+                Click(Button("Language"));
+                yield return WaitFor(() => RawButton(CafeSpeechConversation.LanguageNames[language]), "Language picker opened from voice input");
+                Check(!speech.IsRecording && !speech.IsBusy, "Language picker stops recording and recognition");
+                Click(Button("Back"));
+                yield return WaitFor(() => Button("Speak") && Button("Send") && Button("Language"), "Back restores voice controls");
+                Check(speech.Active && speech.LanguageIndex == language && CafeUiLocalization.LanguageIndex == language,
+                    "Cancelling language selection retains voice mode and the original language");
+                field = ui.TerminalCanvas.GetComponentsInChildren<InputField>().Single(f => f.isActiveAndEnabled);
+                Check(field.text == "UI check draft", "Language picker Back preserves the input draft");
+                Click(Button("Language"));
+                yield return WaitFor(() => RawButton(CafeSpeechConversation.LanguageNames[language]), "Language picker reopened from voice input");
+                Click(RawButton(CafeSpeechConversation.LanguageNames[language]));
+                yield return WaitFor(() => Button("Speak") && Button("Send"), "Language selection restores voice input");
+                field = ui.TerminalCanvas.GetComponentsInChildren<InputField>().Single(f => f.isActiveAndEnabled);
+                Check(speech.Active && !speech.IsRecording && !speech.IsBusy && field.text == "UI check draft",
+                    "Selecting a language retains the draft without recording or submitting a request");
+                Click(Button("View menu"));
+                yield return WaitFor(() => VisibleText("Choose your coffee"), "Voice menu detour");
+                Click(Button("Back"));
+                yield return WaitFor(() => Button("Speak") && Button("Send"), "Menu Back restores voice input");
+                field = ui.TerminalCanvas.GetComponentsInChildren<InputField>().Single(f => f.isActiveAndEnabled);
+                Check(ui.InteractionState == "recommendation" && speech.Active && field.text == "UI check draft",
+                    "Voice menu Back restores recommendation mode and draft");
+                Check(!ui.ShouldShowDrinkPreview, "Voice menu Back does not create a stale drink preview");
                 speech.PreviewChanged.Invoke("Speech recognition failed: simulated status");
                 yield return null;
                 Check(field.text == "UI check draft", "Speech errors never overwrite the input draft");
@@ -109,9 +133,14 @@ namespace VirtualCafe.Recommendation.Editor
                 speech.Recognized.Invoke("   ");
                 yield return null;
                 Check(field.text == "UI check draft" && !ui.recommendation.IsBusy, "Empty recognized text is ignored");
-                Click(Button("Retry"));
-                yield return null;
-                Check(!ui.recommendation.IsBusy && field.gameObject.activeInHierarchy, "Retry before a first submission stays local and leaves input usable");
+                Check(!Button("Retry") && !Button("Resend"), "Fresh input has no retry button before a request fails");
+                var lastRequest = typeof(CafeFrontDeskUI).GetField("lastSubmittedPreference", BindingFlags.Instance | BindingFlags.NonPublic);
+                lastRequest.SetValue(ui, "Failed request draft");
+                ui.SendMessage("OnError", "Simulated request failure");
+                yield return WaitFor(() => Button("Resend") && Button("Send"), "Failed request offers Resend");
+                Check(!ui.recommendation.IsBusy, "Simulating a request failure does not contact the LLM");
+                field = ui.TerminalCanvas.GetComponentsInChildren<InputField>().Single(f => f.isActiveAndEnabled);
+                Check(field.text == "UI check draft", "Failure preserves an existing input draft");
                 field.text = "";
                 Click(Button("Back"));
                 yield return WaitFor(() => Button("Order by voice"), "Input returns to ordering methods");
@@ -126,7 +155,7 @@ namespace VirtualCafe.Recommendation.Editor
                 {
                     var item = CafeRuntimeServices.Menu.GetMenu().items.First(i => i.id == offer.selection.MenuItemId);
                     Click(RawButton(CafeUiLocalization.Text(item.name)));
-                    yield return WaitFor(() => Button("Review order"), "Drink configuration");
+                    yield return WaitFor(() => VisibleText("Make it your own"), "Drink configuration");
                     Check(ui.ShouldShowDrinkPreview, "Explicit selection enables the drink preview");
                     Check(VisibleText("Cup size") && VisibleText("Beans") && VisibleText("Milk"), "Configuration labels are localized");
                     Click(Button("Back"));
@@ -136,6 +165,25 @@ namespace VirtualCafe.Recommendation.Editor
                 else Debug.LogWarning("All configurations are sold out: skipped selecting a drink; checking menu Back still continues.");
                 Click(Button("Back"));
                 yield return WaitFor(() => Button("Order by voice"), "Menu returns to ordering methods instead of cycling to configuration");
+                Click(Button("Help me choose"));
+                yield return WaitFor(() => Button("Send") && Button("View menu"), "Text recommendation after direct selection");
+                for (int detour = 0; detour < 2; detour++)
+                {
+                    field = ui.TerminalCanvas.GetComponentsInChildren<InputField>().Single(f => f.isActiveAndEnabled);
+                    field.text = "Text menu draft";
+                    Click(Button("View menu"));
+                    yield return WaitFor(() => VisibleText("Choose your coffee"), "Text menu detour");
+                    Check(!ui.ShouldShowDrinkPreview, "Menu browsing hides drink previews");
+                    Click(Button("Back"));
+                    yield return WaitFor(() => Button("Send") && Button("View menu"), "Menu Back restores text recommendation");
+                    field = ui.TerminalCanvas.GetComponentsInChildren<InputField>().Single(f => f.isActiveAndEnabled);
+                    Check(ui.InteractionState == "recommendation" && !speech.Active && field.text == "Text menu draft",
+                        "Text menu Back restores mode and draft without activating voice");
+                    Check(!ui.ShouldShowDrinkPreview, "Repeated menu Back cannot revive the previous direct-order cup");
+                    Check(!ui.recommendation.IsBusy, "Browsing and returning never submits an LLM request");
+                }
+                Click(Button("Back"));
+                yield return WaitFor(() => Button("Order by voice"), "Text input returns to welcome");
                 Click(Button("Just browsing"));
                 Check(!ui.IsInterfaceVisible && !player.UiMode && Cursor.visible && Cursor.lockState == CursorLockMode.None,
                     "Just browsing closes the panel without hiding or locking the cursor");

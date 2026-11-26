@@ -56,6 +56,7 @@ namespace VirtualCafe.Recommendation
         private Sprite roundedCard;
         private bool dialogueActive, waitingForReply;
         private string lastSubmittedPreference;
+        private bool recommendationRequestFailed;
         private InputField input;
         private Text status, selectionText;
         private Button send, another, confirm;
@@ -307,6 +308,7 @@ namespace VirtualCafe.Recommendation
         private void OnReply(string value)
         {
             if (mode != "recommendation" || purchasing) return;
+            recommendationRequestFailed = false;
             waitingForReply = false;
             if (CafeUiLocalization.LanguageIndex == 1 && value == "你好呀！今天想喝点什么？口味、奶种或预算都可以告诉我。")
                 value = "Hello! Tell me your taste, milk preference or budget.";
@@ -380,20 +382,25 @@ namespace VirtualCafe.Recommendation
             draft = "";
             recommendation.CancelSession(); speech.Activate(CafeUiLocalization.LanguageIndex);
             recommendation.SetConversationLanguage(speech.Language);
-            lastSubmittedPreference = null;
+            lastSubmittedPreference = null; recommendationRequestFailed = false;
             mode = "recommendation"; messages.Clear(); purchased = false; currentReceipt = null;
             reception.OpenRecommendation(); recommendation.BeginSession();
         }
         private void ShowVoiceLanguages()
         {
             bool resume = mode == "recommendation";
-            ShowLanguagePicker(index => {
-                if (!resume) { StartVoiceConversation(index); return; }
-                speech.Activate(index);
+            bool resumeVoice = speech && speech.Active;
+            Action returnToInput = () => {
+                // Restore voice mode, but never restart recording automatically.
+                if (resumeVoice) speech.Activate(CafeUiLocalization.LanguageIndex);
                 recommendation.SetConversationLanguage(CafeUiLocalization.LanguageCode);
                 mode = "recommendation";
                 ShowPreferenceInput();
-            }, resume ? (Action)ShowPreferenceInput : ShowWelcomeChoices);
+            };
+            ShowLanguagePicker(index => {
+                if (!resume) { StartVoiceConversation(index); return; }
+                returnToInput();
+            }, resume ? returnToInput : (Action)ShowWelcomeChoices);
         }
         private void ShowLanguagePicker(Action<int> selected, Action back)
         {
@@ -423,6 +430,9 @@ namespace VirtualCafe.Recommendation
         private void OnError(string value)
         {
             if (mode != "recommendation" || string.IsNullOrEmpty(value)) return;
+            recommendationRequestFailed = !string.IsNullOrEmpty(lastSubmittedPreference);
+            if (string.IsNullOrEmpty(draft)) draft = lastSubmittedPreference ?? "";
+            if (input && string.IsNullOrEmpty(input.text)) input.text = draft;
             waitingForReply = false;
             Speak(DisplayEnglish(value), () => {
                 ShowPreferenceInput();
@@ -463,7 +473,7 @@ namespace VirtualCafe.Recommendation
             languageText.resizeTextMaxSize = 18; languageText.fontSize = 18;
             MakeButton(root, "Show me the menu", 28, 100, 360, 65, OpenOrder);
             MakeButton(root, "Help me choose", 412, 100, 360, 65, OpenRecommendation);
-            MakeButton(root, "Order by voice", 28, 195, 360, 60, ShowVoiceLanguages);
+            MakeButton(root, "Order by voice", 28, 195, 360, 60, () => StartVoiceConversation(CafeUiLocalization.LanguageIndex));
             MakeButton(root, "Just browsing", 412, 195, 360, 60, EndPlayerInteraction);
             if (CartCupCount > 0)
                 MakeButton(root, CartText("View order ({0})", "查看订单（{0}杯）", "注文を見る（{0}杯）", CartCupCount),
@@ -569,7 +579,7 @@ namespace VirtualCafe.Recommendation
             if (purchasing || KeepPendingReceiptVisible()) return;
             browsingMenu = false;
             StopVoice();
-            lastSubmittedPreference = null;
+            lastSubmittedPreference = null; recommendationRequestFailed = false;
             mode = "recommendation"; messages.Clear(); purchased = false; currentReceipt = null;
             reception.OpenRecommendation(); recommendation.BeginSession();
         }
@@ -698,6 +708,8 @@ namespace VirtualCafe.Recommendation
         }
         private void ShowPreferenceInput()
         {
+            mode = "recommendation";
+            hasChosenDrink = false;
             browsingMenu = false;
             bool voiceMode = speech && speech.Active;
             ActionWindow("Tell your barista", voiceMode ? 480 : 360, ShowWelcomeChoices);
@@ -710,7 +722,8 @@ namespace VirtualCafe.Recommendation
             placeholder.color = new Color(.5f, .46f, .4f); input.placeholder = placeholder;
             send = MakeButton(root, "Send", 636, 95, 136, 100, () => Submit(false));
             MakeButton(root, "View menu", 28, 225, 220, 55, () => { menuReturn = ShowPreferenceInput; Speak("Of course. Here is our menu.", ShowDrinkMenu); });
-            MakeButton(root, "Retry", 268, 225, 220, 55, () => SubmitRequest(true, true));
+            if (recommendationRequestFailed && !string.IsNullOrEmpty(lastSubmittedPreference))
+                MakeButton(root, "Resend", 268, 225, 220, 55, () => SubmitRequest(false, true));
             status = Label(root, "", 28, 294, 744, 55, 19);
             if (voiceMode)
             {
@@ -762,13 +775,13 @@ namespace VirtualCafe.Recommendation
         private void SubmitRequest(bool alternate, bool retry)
         {
             if (mode != "recommendation" || purchasing || recommendation.IsBusy || (speech && speech.IsBusy)) return;
-            string text = input ? input.text.Trim() : "";
+            if (retry && (!recommendationRequestFailed || string.IsNullOrEmpty(lastSubmittedPreference))) return;
+            string text = retry ? lastSubmittedPreference : input ? input.text.Trim() : "";
             if (!alternate && text.Length == 0) return;
-            if (retry && string.IsNullOrEmpty(lastSubmittedPreference))
-            { if (status) status.text = CafeUiLocalization.Text("Send your preference before retrying."); return; }
-            if (!alternate) lastSubmittedPreference = text;
+            if (!retry) lastSubmittedPreference = alternate ? "Another recommendation, please." : text;
+            recommendationRequestFailed = false;
             if (input) { input.text = ""; draft = ""; }
-            messages.Add("You: " + (alternate ? "Another recommendation, please." : text));
+            messages.Add("You: " + lastSubmittedPreference);
             waitingForReply = true; dialogueActive = false;
             root.gameObject.SetActive(false);
             speechBubble.Show(CafeUiLocalization.Text("Let me check our menu and the latest stock for you..."));

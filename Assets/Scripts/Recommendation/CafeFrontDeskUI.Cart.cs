@@ -326,7 +326,7 @@ namespace VirtualCafe.Recommendation
             if (receipt == null) { back?.Invoke(); return; }
             var entries = receipt.GetLines();
             float height = Mathf.Max(620, 410 + entries.Length * 108);
-            ActionWindow(historical ? "Recent order" : "Order confirmed", height, back);
+            ActionWindow(historical ? "Recent order" : "Order confirmed", height, historical ? back : null);
             Label(root, historical
                 ? CartText("Saved order — no new purchase.", "历史订单，不会再次扣库存。", "過去の注文です。在庫は減りません。")
                 : CartText("Keep this pickup number.", "请保留取餐号。", "受取番号を保管してください。"), 28, 86, 744, 38, 22);
