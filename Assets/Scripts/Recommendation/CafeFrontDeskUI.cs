@@ -10,7 +10,7 @@ using VirtualCafe.Player;
 namespace VirtualCafe.Recommendation
 {
     // Camera-facing interaction panel, displayed only after approaching the counter.
-    public sealed class CafeFrontDeskUI : MonoBehaviour
+    public sealed partial class CafeFrontDeskUI : MonoBehaviour
     {
         public CafeReceptionController reception;
         public CafeRecommendationController recommendation;
@@ -128,8 +128,7 @@ namespace VirtualCafe.Recommendation
                 if (machineProduction &&
                     machineProduction.isActiveAndEnabled &&
                     machineProduction.BeginProduction(
-                        currentReceipt.pickupNumber,
-                        currentReceipt.selection.Servings))
+                        currentReceipt))
                 {
                     pendingMachineProduction = false;
                 }
@@ -442,9 +441,9 @@ namespace VirtualCafe.Recommendation
         }
         private void ShowWelcomeChoices()
         {
-            if (purchasing) return;
+            if (purchasing || KeepPendingReceiptVisible()) return;
             StopVoice(); recommendation.CancelSession(); reception.BeginReception(); mode = "welcome";
-            ActionWindow("How would you like to order?", recentReceipt == null ? 300 : 356);
+            ActionWindow("How would you like to order?", (recentReceipt == null && CartCupCount == 0) ? 300 : 356);
             root.Find("Text").GetComponent<RectTransform>().sizeDelta = new Vector2(490, 44);
             string languageName = CafeSpeechConversation.LanguageNames[CafeUiLocalization.LanguageIndex];
             var languageButton = MakeButton(root, languageName + " ▾", 542, 24, 100, 36,
@@ -456,6 +455,9 @@ namespace VirtualCafe.Recommendation
             MakeButton(root, "Help me choose", 412, 100, 360, 65, OpenRecommendation);
             MakeButton(root, "Order by voice", 28, 195, 360, 60, ShowVoiceLanguages);
             MakeButton(root, "Just browsing", 412, 195, 360, 60, EndPlayerInteraction);
+            if (CartCupCount > 0)
+                MakeButton(root, CartText("View order ({0})", "查看订单（{0}杯）", "注文を見る（{0}杯）", CartCupCount),
+                    412, 284, 360, 38, ShowCart);
             if (recentReceipt != null)
             {
                 var recent = MakeButton(root, "View recent order", 28, 284, 270, 38, () => {
@@ -554,7 +556,7 @@ namespace VirtualCafe.Recommendation
         }
         public void OpenRecommendation()
         {
-            if (purchasing) return;
+            if (purchasing || KeepPendingReceiptVisible()) return;
             browsingMenu = false;
             StopVoice();
             lastSubmittedPreference = null;
@@ -563,7 +565,7 @@ namespace VirtualCafe.Recommendation
         }
         public void OpenOrder()
         {
-            if (purchasing) return;
+            if (purchasing || KeepPendingReceiptVisible()) return;
             hasChosenDrink = false; browsingMenu = true;
             StopVoice();
             beanChosen = cupChosen = milkChosen = true;
@@ -574,9 +576,9 @@ namespace VirtualCafe.Recommendation
         }
         private void ShowDrinkMenu()
         {
-            browsingMenu = true;
+            mode = "order"; browsingMenu = true;
             var items = CafeRuntimeServices.Menu.GetMenu().items;
-            ActionWindow("Choose your coffee", 145 + ((items.Length + 1) / 2) * 100, () => { (menuReturn ?? ShowWelcomeChoices)(); });
+            ActionWindow("Choose your coffee", 215 + ((items.Length + 1) / 2) * 100, () => { (menuReturn ?? ShowWelcomeChoices)(); });
             int index = 0;
             foreach (var item in items)
             {
@@ -597,6 +599,8 @@ namespace VirtualCafe.Recommendation
                 menuButtons[id] = button; index++;
             }
             RefreshMenuOffers();
+            MakeButton(root, CartText("View order ({0})", "查看订单（{0}杯）", "注文を見る（{0}杯）", CartCupCount),
+                28, 115 + ((items.Length + 1) / 2) * 100, 744, 52, ShowCart);
         }
         public void InspectCup(string productId)
         {
@@ -726,33 +730,14 @@ namespace VirtualCafe.Recommendation
             selectionText = Label(root, "", 28, 85, 744, 80, 24);
             options = Box(root, "Configuration", 28, 185, 740, 430);
             status = Label(root, "", 28, 620, 744, 42, 20);
-            confirm = MakeButton(root, "Review order", 28, 685, 480, 60, ReviewOrder);
-            MakeButton(root, "Change drink", 528, 685, 244, 60, () => { menuReturn = mode == "recommendation" ? (Action)ShowPreferenceInput : ShowWelcomeChoices; Speak("Let's choose another coffee.", ShowDrinkMenu); });
+            confirm = MakeButton(root, CartText("Add to order", "加入订单", "注文に追加"), 28, 685, 234, 60, ReviewOrder);
+            MakeButton(root, CartText("View order ({0})", "查看订单（{0}杯）", "注文を見る（{0}杯）", CartCupCount), 282, 685, 234, 60, ShowCart);
+            MakeButton(root, "Change drink", 536, 685, 236, 60, () => { menuReturn = ShowWelcomeChoices; mode = "order"; Speak("Let's choose another coffee.", ShowDrinkMenu); });
             dirty = true;
         }
         private void ReviewOrder()
         {
-            var selection = reception.menuAdapter.CurrentSelection;
-            var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == selection.MenuItemId);
-            var missing = CafeUiSelectionRules.MissingOptions(selection, item, cupChosen, beanChosen, milkChosen);
-            if (missing.Length > 0) { ShowValidationPopup("Please select: " + string.Join(", ", missing)); return; }
-            if (!CafeRuntimeServices.Menu.TryGetPrice(selection, out var quote, out var reason))
-            { Speak(DisplayEnglish(reason), ShowConfiguration); return; }
-            string summary = CafeUiLocalization.Format(
-                "{0}, {1} ml. {2}, {3}. Your total is CNY {4}. Shall I place your order?",
-                "{0}，{1} 毫升，{2}，{3}。合计 ¥{4}，现在下单吗？",
-                "{0}、{1} ml、{2}、{3}。合計 CNY {4} です。注文を確定しますか？",
-                DisplayEnglish(item.name), selection.CupSizeMl,
-                Name(string.IsNullOrEmpty(selection.BeanId) ? item.beanIds[0] : selection.BeanId),
-                string.IsNullOrEmpty(selection.MilkId) ? CafeUiLocalization.Text("No milk") : Name(selection.MilkId),
-                (quote.totalPriceCents / 100m).ToString("0.00"));
-            Speak(summary, () => {
-                ActionWindow("Confirm your order", 320, ShowConfiguration);
-                Label(root, summary, 28, 84, 744, 100, 24);
-                status = Label(root, "", 28, 185, 744, 42, 19);
-                confirm = MakeButton(root, "Confirm purchase", 28, 240, 360, 55, Purchase);
-                MakeButton(root, "Go back and adjust", 412, 240, 360, 55, ShowConfiguration);
-            });
+            AddCurrentSelectionToCart();
         }
         private RectTransform ChatSurface(Transform parent, string name, float x, float y, float w, float h, bool customer)
         {
@@ -782,163 +767,41 @@ namespace VirtualCafe.Recommendation
         }
         private void Purchase()
         {
-            if (purchased || purchasing || validationPopup ||
-                recommendation.IsBusy || (speech && speech.Active && speech.IsBusy) ||
-                (mode != "order" && mode != "recommendation"))
-                return;
-
-            if (mode == "recommendation" &&
-                recommendation.CurrentRecommendation == null)
-                return;
-
-            var adapter = reception.menuAdapter;
-            var source = adapter.CurrentSelection;
-
-            var selection = new MenuSelection
-            {
-                MenuItemId = source.MenuItemId,
-                CupSizeMl = source.CupSizeMl,
-                BeanId = source.BeanId,
-                MilkId = source.MilkId,
-                Servings = source.Servings
-            };
-            // 必须在确认库存之前检查，不能付款后才发现无法制作。
-            if (pendingMachineProduction)
-            {
-                ShowValidationPopup(
-                    "Please close your confirmed receipt to start production."
-                );
-                return;
-            }
-
-            if (!machineProduction)
-            {
-                ShowValidationPopup(
-                    "Production setup is incomplete."
-                );
-                return;
-            }
-
-            if (!machineProduction.CanAcceptOrder(
-                    selection.Servings,
-                    out string productionReason))
-            {
-                ShowValidationPopup(productionReason);
-                return;
-            }
-
-            var item = Array.Find(
-                CafeRuntimeServices.Menu.GetMenu().items,
-                x => x.id == selection.MenuItemId
-            );
-
-            var missing = CafeUiSelectionRules.MissingOptions(
-                selection, item, cupChosen, beanChosen, milkChosen
-            );
-
-            if (missing.Length > 0)
-            {
-                ShowValidationPopup(
-                    "Please select: " + string.Join(", ", missing)
-                );
-                return;
-            }
-
-            if (!CafeRuntimeServices.Menu.TryGetPrice(
-                selection, out var quote, out string reason))
-            {
-                status.text = DisplayEnglish(reason);
-                return;
-            }
-
-            var receipt = new CafeOrderReceipt
-            {
-                selection = selection,
-                drinkName = DisplayEnglish(item.name),
-                beanName = Name(
-                    string.IsNullOrEmpty(selection.BeanId)
-                        ? item.beanIds[0]
-                        : selection.BeanId
-                ),
-                milkName = string.IsNullOrEmpty(selection.MilkId)
-                    ? ""
-                    : Name(selection.MilkId),
-                totalPriceCents = quote.totalPriceCents
-            };
-
-            purchasing = true;
-
-            if (confirm)
-                confirm.interactable = false;
-
-            bool confirmed = false;
-
-            try
-            {
-                // Confirm stock exactly once before playing the animation.
-                adapter.ConfirmCurrentSelection();
-                purchased = adapter.LastConfirmationSucceeded;
-
-                if (!purchased)
-                {
-                    status.text = DisplayEnglish(adapter.LastResult);
-                    return;
-                }
-
-                currentReceipt = receipt;
-                receipt.IssuePickupNumber();
-                recentReceipt = receipt;
-
-                try
-                {
-                    recommendation.NotifyConfirmedOrder(receipt);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-
-                confirmed = true;
-            }
-            finally
-            {
-                if (!confirmed)
-                    purchasing = false;
-            }
-
-            orderCompletionRoutine =
-                StartCoroutine(CompleteOrderWithAnimation());
+            PurchaseCart();
         }
 
         private IEnumerator CompleteOrderWithAnimation()
         {
             SetPointerInteraction(false);
-
-            if (status)
-                status.text =
-                    CafeUiLocalization.Text("Preparing your drink...");
-
             try
             {
-                yield return null;
-
-                // 保留原来的原料融合动画。
-                if (orderAnimation && orderAnimation.isActiveAndEnabled)
-                    yield return orderAnimation.Play();
-
-                // 这里只记录待制作，不等待取餐。
-                pendingMachineProduction = true;
-
-                // 保留原来的机器人回复、凭据和取餐号。
+                // Show each recipe's existing ingredient-fusion animation once.
+                // This is a visual preview only: no inventory confirmation here.
+                foreach (var line in currentReceipt.GetLines())
+                {
+                    var selection = line.selection;
+                    var adapter = reception.menuAdapter;
+                    adapter.SelectDrink(selection.MenuItemId);
+                    adapter.SelectCupSize(selection.CupSizeMl);
+                    if (!string.IsNullOrEmpty(selection.BeanId)) adapter.SelectBean(selection.BeanId);
+                    if (!string.IsNullOrEmpty(selection.MilkId)) adapter.SelectMilk(selection.MilkId);
+                    adapter.SetQuantity(selection.Servings);
+                    mode = "order";
+                    browsingMenu = false; hasChosenDrink = true;
+                    beanChosen = cupChosen = milkChosen = true;
+                    if (status) status.text = CartText("Preparing your drink...", "正在准备饮品…", "ドリンクを準備しています…");
+                    yield return null;
+                    yield return null;
+                    if (orderAnimation && orderAnimation.isActiveAndEnabled)
+                        yield return orderAnimation.Play();
+                }
                 ShowCompletion();
             }
             finally
             {
                 purchasing = false;
                 orderCompletionRoutine = null;
-
-                if (root && root.gameObject.activeSelf)
-                    SetPointerInteraction(true);
+                if (root && root.gameObject.activeSelf) SetPointerInteraction(true);
             }
         }
         private void ShowCompletion()
@@ -955,24 +818,7 @@ namespace VirtualCafe.Recommendation
         }
         private void RenderReceipt(CafeOrderReceipt receipt, Action back, bool historical)
         {
-            if (receipt == null) { back(); return; }
-            ActionWindow(historical ? "Recent order" : "Order confirmed", 700, back);
-            var card = ChatSurface(root, "Saved receipt", 24, 100, 752, 450, false);
-            Label(card, historical ? "Your saved order. No new purchase has been made." : "Your drink is confirmed. Thank you! Keep this pickup number.", 24, 28, 704, 80, 27);
-            Label(card, receipt.pickupNumber, 24, 130, 704, 90, 58).fontStyle = FontStyle.Bold;
-            string name = receipt.drinkName;
-            var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == receipt.selection.MenuItemId);
-            if (item != null) name = DisplayEnglish(item.name);
-            Label(
-                card,
-                name + " / " + receipt.selection.CupSizeMl +
-                " ml × " + receipt.selection.Servings + " cups",
-                24, 240, 704, 45, 26
-            );
-            Label(card, "Total: CNY " + (receipt.totalPriceCents / 100m).ToString("0.00"), 24, 295, 704, 42, 26);
-            if (DateTimeOffset.TryParse(receipt.confirmedAt, out var date))
-                Label(card, date.ToLocalTime().ToString("yyyy-MM-dd HH:mm"), 24, 365, 704, 32, 20);
-            MakeButton(root, "Thanks, keep exploring", 24, 595, 752, 64, EndPlayerInteraction);
+            RenderMixedReceipt(receipt, back, historical);
         }
 
         private void Update()
@@ -1017,7 +863,7 @@ namespace VirtualCafe.Recommendation
             if (busy && status) status.text = CafeUiLocalization.Text("Checking the latest menu. Please wait...");
             else if (status && status.text == CafeUiLocalization.Text("Checking the latest menu. Please wait...")) status.text = mode == "recommendation" ? DisplayEnglish(recommendation.ErrorText) : "";
             foreach (var b in configurationButtons) if (b)
-                b.interactable = !busy && !purchased && (!optionAvailability.TryGetValue(b, out bool allowed) || allowed);
+                    b.interactable = !busy && !purchased && (!optionAvailability.TryGetValue(b, out bool allowed) || allowed);
             if (dirty && options) { dirty = false; DrawSelection(selected); }
         }
         private void LateUpdate()
@@ -1044,16 +890,16 @@ namespace VirtualCafe.Recommendation
                     new Vector3(targetBounds.min.x,targetBounds.max.y,targetBounds.min.z), new Vector3(targetBounds.max.x,targetBounds.max.y,targetBounds.min.z),
                     new Vector3(targetBounds.min.x,targetBounds.min.y,targetBounds.max.z), new Vector3(targetBounds.max.x,targetBounds.min.y,targetBounds.max.z),
                     new Vector3(targetBounds.min.x,targetBounds.max.y,targetBounds.max.z), new Vector3(targetBounds.max.x,targetBounds.max.y,targetBounds.max.z) };
-                float minX=point.x, maxX=point.x, minY=point.y, maxY=point.y;
+                float minX = point.x, maxX = point.x, minY = point.y, maxY = point.y;
                 foreach (var corner in corners)
                 {
                     RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, customerCamera.WorldToScreenPoint(corner), canvasCamera, out var p);
-                    minX=Mathf.Min(minX,p.x); maxX=Mathf.Max(maxX,p.x); minY=Mathf.Min(minY,p.y); maxY=Mathf.Max(maxY,p.y);
+                    minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x); minY = Mathf.Min(minY, p.y); maxY = Mathf.Max(maxY, p.y);
                 }
                 projected = Rect.MinMaxRect(minX - 18, minY - 18, maxX + 18, maxY + 18);
-                if (projected.Overlaps(new Rect(x-cardHalfW,y-cardHalfH,cardHalfW*2,cardHalfH*2)))
+                if (projected.Overlaps(new Rect(x - cardHalfW, y - cardHalfH, cardHalfW * 2, cardHalfH * 2)))
                     y = halfH - cardHalfH - 28;
-                root.anchoredPosition = new Vector2(x, Mathf.Clamp(y, -Mathf.Max(0,halfH-cardHalfH-20), Mathf.Max(0,halfH-cardHalfH-20)));
+                root.anchoredPosition = new Vector2(x, Mathf.Clamp(y, -Mathf.Max(0, halfH - cardHalfH - 20), Mathf.Max(0, halfH - cardHalfH - 20)));
             }
             root.localRotation = Quaternion.identity;
             if (scrollToLatest && chatScroll && chatScroll.gameObject.activeInHierarchy)
@@ -1079,7 +925,7 @@ namespace VirtualCafe.Recommendation
                 confirm.GetComponentInChildren<Text>().text = CafeUiLocalization.Text("Order complete");
                 return;
             }
-            confirm.GetComponentInChildren<Text>().text = CafeUiLocalization.Text("Review order");
+            confirm.GetComponentInChildren<Text>().text = CartText("Add to order", "加入订单", "注文に追加");
             if (!selected) { selectionText.text = CafeUiLocalization.Text("Talk to the barista to complete your choice. Confirm your drink only when you are ready."); return; }
             var adapter = reception.menuAdapter; var s = adapter.CurrentSelection;
             var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == s.MenuItemId);
@@ -1108,7 +954,7 @@ namespace VirtualCafe.Recommendation
             }
             // 数量：放在杯型按钮右侧。
             int maxServings = machineProduction
-                ? machineProduction.OrderCapacity
+                ? Mathf.Max(1, machineProduction.OrderCapacity - CartCupCount)
                 : 1;
 
             Label(options, "Qty", 432, 0, 60, 48, 20)
@@ -1166,16 +1012,6 @@ namespace VirtualCafe.Recommendation
             {
                 var quantityCandidate = CopySelection(s);
                 quantityCandidate.Servings = s.Servings + 1;
-                bool available = CafeRuntimeServices.Menu.IsAvailable(
-                    quantityCandidate,
-                    out string quantityReason
-                );
-
-                Debug.Log(
-                    $"[Quantity] 杯数={quantityCandidate.Servings}, " +
-                    $"可制作={available}, 原因={quantityReason}"
-                );
-
                 // 数量按钮直接检查整单库存，
                 // 不走杯型、豆、奶的通用选项判断。
                 bool canAddCup = CafeRuntimeServices.Menu.IsAvailable(
@@ -1189,12 +1025,7 @@ namespace VirtualCafe.Recommendation
                 // 保持按钮显示“＋”，不追加“售罄”文字。
                 plusButton.GetComponentInChildren<Text>().text = "+";
 
-                if (!canAddCup)
-                {
-                    Debug.Log(
-                        "[Quantity] 无法增加一杯：" + addCupReason
-                    );
-                }
+
             }
             Label(options, "Beans", 0, 68, 90, 48, 22).alignment = TextAnchor.MiddleLeft;
             x = 100;
@@ -1296,9 +1127,13 @@ namespace VirtualCafe.Recommendation
             var targets = Label(card, string.Join("  /  ", preparation), 20, 110, 700, 32, 18);
             targets.color = new Color(.47f, .38f, .28f);
         }
-        private static MenuSelection CopySelection(MenuSelection s) => new MenuSelection {
-            MenuItemId = s.MenuItemId, CupSizeMl = s.CupSizeMl,
-            BeanId = s.BeanId, MilkId = s.MilkId, Servings = s.Servings
+        private static MenuSelection CopySelection(MenuSelection s) => new MenuSelection
+        {
+            MenuItemId = s.MenuItemId,
+            CupSizeMl = s.CupSizeMl,
+            BeanId = s.BeanId,
+            MilkId = s.MilkId,
+            Servings = s.Servings
         };
         private void ConfigureAvailability(Button button, MenuSelection candidate, string name, string dimension, List<string> reasons)
         {
@@ -1384,7 +1219,7 @@ namespace VirtualCafe.Recommendation
                 {"请先输入偏好。", "Please enter your preferences."},
                 {"请打开 Virtual Cafe > LLM Settings 填写接口、模型及API Key并保存。", "Open Virtual Cafe > LLM Settings, enter endpoint, model and API key, then save."}
             };
-            for (int i=0;i<words.GetLength(0);i++) text=text.Replace(words[i,0],words[i,1]);
+            for (int i = 0; i < words.GetLength(0); i++) text = text.Replace(words[i, 0], words[i, 1]);
             if (System.Text.RegularExpressions.Regex.IsMatch(text, @"[\u4e00-\u9fff]"))
             {
                 if (text.Contains("LLM Settings")) return CafeUiLocalization.Text("Check your connection in Virtual Cafe > LLM Settings.");
