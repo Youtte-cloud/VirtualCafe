@@ -6247,7 +6247,7 @@ Transform:
   m_GameObject: {fileID: 375507982}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.5, y: 1.34, z: 1.3}
+  m_LocalPosition: {x: -2.4, y: 1.34, z: 1.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8265,6 +8265,8 @@ Transform:
   - {fileID: 1121109964}
   - {fileID: 375507983}
   - {fileID: 636670312}
+  - {fileID: 1149619176}
+  - {fileID: 1878788193}
   m_Father: {fileID: 34079395}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &542349549
@@ -9480,7 +9482,7 @@ Transform:
   m_GameObject: {fileID: 636670311}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.7, y: 1.34, z: 1.1}
+  m_LocalPosition: {x: -2.7, y: 1.34, z: 1.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -17381,7 +17383,7 @@ Transform:
   m_GameObject: {fileID: 1121109963}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.9, y: 1.34, z: 1.3}
+  m_LocalPosition: {x: -3, y: 1.34, z: 1.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -17509,10 +17511,13 @@ MonoBehaviour:
   - {fileID: 1121109964}
   - {fileID: 375507983}
   - {fileID: 636670312}
+  - {fileID: 1149619176}
+  - {fileID: 1878788193}
   brewingDuration: 3
   transferDuration: 1.2
   liquidRiseHeight: 0.08
   transferArcHeight: 0.2
+  largeCupScale: 1.08
   audioSource: {fileID: 0}
   brewingSound: {fileID: 0}
   readySound: {fileID: 0}
@@ -17699,6 +17704,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1246459071940b64eb44cb194a3953af, type: 3}
   m_PrefabInstance: {fileID: 1143977706}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1149619175
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1149619176}
+  m_Layer: 0
+  m_Name: Slot_04
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1149619176
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1149619175}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.85, y: 1.34, z: 1.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 538916359}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1153576084
 GameObject:
   m_ObjectHideFlags: 0
@@ -27032,6 +27068,37 @@ MonoBehaviour:
   - productId: latte
     cupRenderer: {fileID: 115362199}
     materialIndex: 0
+--- !u!1 &1878788192
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1878788193}
+  m_Layer: 0
+  m_Name: Slot_05
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1878788193
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1878788192}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.55, y: 1.34, z: 1.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 538916359}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1879047714
 GameObject:
   m_ObjectHideFlags: 0
