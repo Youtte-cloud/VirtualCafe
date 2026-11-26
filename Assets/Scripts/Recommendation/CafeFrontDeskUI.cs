@@ -128,7 +128,8 @@ namespace VirtualCafe.Recommendation
                 if (machineProduction &&
                     machineProduction.isActiveAndEnabled &&
                     machineProduction.BeginProduction(
-                        currentReceipt.pickupNumber))
+                        currentReceipt.pickupNumber,
+                        currentReceipt.selection.Servings))
                 {
                     pendingMachineProduction = false;
                 }
@@ -791,7 +792,40 @@ namespace VirtualCafe.Recommendation
                 return;
 
             var adapter = reception.menuAdapter;
-            var selection = adapter.CurrentSelection;
+            var source = adapter.CurrentSelection;
+
+            var selection = new MenuSelection
+            {
+                MenuItemId = source.MenuItemId,
+                CupSizeMl = source.CupSizeMl,
+                BeanId = source.BeanId,
+                MilkId = source.MilkId,
+                Servings = source.Servings
+            };
+            // 必须在确认库存之前检查，不能付款后才发现无法制作。
+            if (pendingMachineProduction)
+            {
+                ShowValidationPopup(
+                    "Please close your confirmed receipt to start production."
+                );
+                return;
+            }
+
+            if (!machineProduction)
+            {
+                ShowValidationPopup(
+                    "Production setup is incomplete."
+                );
+                return;
+            }
+
+            if (!machineProduction.CanAcceptOrder(
+                    selection.Servings,
+                    out string productionReason))
+            {
+                ShowValidationPopup(productionReason);
+                return;
+            }
 
             var item = Array.Find(
                 CafeRuntimeServices.Menu.GetMenu().items,
@@ -929,7 +963,12 @@ namespace VirtualCafe.Recommendation
             string name = receipt.drinkName;
             var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == receipt.selection.MenuItemId);
             if (item != null) name = DisplayEnglish(item.name);
-            Label(card, name + " / " + receipt.selection.CupSizeMl + " ml", 24, 240, 704, 45, 26);
+            Label(
+                card,
+                name + " / " + receipt.selection.CupSizeMl +
+                " ml × " + receipt.selection.Servings + " cups",
+                24, 240, 704, 45, 26
+            );
             Label(card, "Total: CNY " + (receipt.totalPriceCents / 100m).ToString("0.00"), 24, 295, 704, 42, 26);
             if (DateTimeOffset.TryParse(receipt.confirmedAt, out var date))
                 Label(card, date.ToLocalTime().ToString("yyyy-MM-dd HH:mm"), 24, 365, 704, 32, 20);
@@ -1046,7 +1085,7 @@ namespace VirtualCafe.Recommendation
             var item = Array.Find(CafeRuntimeServices.Menu.GetMenu().items, x => x.id == s.MenuItemId);
             if (item == null) return;
             if (beanChoiceProduct != s.MenuItemId) { beanChoiceProduct = s.MenuItemId; beanChosen = cupChosen = milkChosen = true; }
-            selectionText.text = DisplayEnglish(item.name) + " · " + (cupChosen ? s.CupSizeMl + "ml" : "Select a cup size") + " · " + adapter.PriceText + "\n" +
+            selectionText.text = DisplayEnglish(item.name) + " × " + s.Servings + " · " + (cupChosen ? s.CupSizeMl + "ml" : "Select a cup size") + " · " + adapter.PriceText + "\n" +
                 (beanChosen ? Name(string.IsNullOrEmpty(s.BeanId) ? item.beanIds[0] : s.BeanId) : "Select a coffee bean") +
                 (item.milkIds.Length == 0 ? " / No milk" : !milkChosen ? " / Select milk" : " · " + Name(s.MilkId)) + " · " + (cupChosen && beanChosen && (item.milkIds.Length == 0 || milkChosen) ? DisplayEnglish(adapter.StatusText) : "Selection incomplete");
             selectionText.text = CafeUiLocalization.Text(selectionText.text);
@@ -1066,6 +1105,96 @@ namespace VirtualCafe.Recommendation
                 var candidate = CopySelection(s); candidate.CupSizeMl = size;
                 ConfigureAvailability(button, candidate, "Cup size " + size + "ml", "cup", unavailableReasons);
                 configurationButtons.Add(button); x += 166;
+            }
+            // 数量：放在杯型按钮右侧。
+            int maxServings = machineProduction
+                ? machineProduction.OrderCapacity
+                : 1;
+
+            Label(options, "Qty", 432, 0, 60, 48, 20)
+                .alignment = TextAnchor.MiddleLeft;
+
+            var minusButton = MakeButton(
+                options, "-", 496, 0, 52, 48,
+                () =>
+                {
+                    int quantity = adapter.CurrentSelection.Servings;
+
+                    if (quantity > 1)
+                    {
+                        adapter.SetQuantity(quantity - 1);
+                        if (status) status.text = "";
+                        dirty = true;
+                    }
+                }
+            );
+
+            bool canDecrease = s.Servings > 1;
+            minusButton.interactable = canDecrease;
+            configurationButtons.Add(minusButton);
+            optionAvailability[minusButton] = canDecrease;
+
+            Label(
+                options,
+                s.Servings.ToString(),
+                552, 0, 64, 48, 24
+            ).alignment = TextAnchor.MiddleCenter;
+
+            var plusButton = MakeButton(
+                options, "+", 620, 0, 52, 48,
+                () =>
+                {
+                    int quantity = adapter.CurrentSelection.Servings;
+
+                    if (quantity < maxServings)
+                    {
+                        adapter.SetQuantity(quantity + 1);
+                        if (status) status.text = "";
+                        dirty = true;
+                    }
+                }
+            );
+
+            configurationButtons.Add(plusButton);
+
+            if (s.Servings >= maxServings)
+            {
+                plusButton.interactable = false;
+                optionAvailability[plusButton] = false;
+            }
+            else
+            {
+                var quantityCandidate = CopySelection(s);
+                quantityCandidate.Servings = s.Servings + 1;
+                bool available = CafeRuntimeServices.Menu.IsAvailable(
+                    quantityCandidate,
+                    out string quantityReason
+                );
+
+                Debug.Log(
+                    $"[Quantity] 杯数={quantityCandidate.Servings}, " +
+                    $"可制作={available}, 原因={quantityReason}"
+                );
+
+                // 数量按钮直接检查整单库存，
+                // 不走杯型、豆、奶的通用选项判断。
+                bool canAddCup = CafeRuntimeServices.Menu.IsAvailable(
+                    quantityCandidate,
+                    out string addCupReason
+                );
+
+                plusButton.interactable = canAddCup;
+                optionAvailability[plusButton] = canAddCup;
+
+                // 保持按钮显示“＋”，不追加“售罄”文字。
+                plusButton.GetComponentInChildren<Text>().text = "+";
+
+                if (!canAddCup)
+                {
+                    Debug.Log(
+                        "[Quantity] 无法增加一杯：" + addCupReason
+                    );
+                }
             }
             Label(options, "Beans", 0, 68, 90, 48, 22).alignment = TextAnchor.MiddleLeft;
             x = 100;
