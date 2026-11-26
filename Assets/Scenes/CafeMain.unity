@@ -1150,31 +1150,31 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 742031124}
+    m_TransformParent: {fileID: 1950684246}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.4999999
+      value: 0.29999998
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.4999999
+      value: 0.29999998
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.3699994
+      value: -3.697
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.72
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.4749994
+      value: -2.2770002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalRotation.w
@@ -4925,6 +4925,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 310226396}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &313158374
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 313158375}
+  m_Layer: 0
+  m_Name: CupSlot_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &313158375
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 313158374}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.46, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1413884643}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &313678377
 GameObject:
   m_ObjectHideFlags: 0
@@ -5666,31 +5697,31 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 742031124}
+    m_TransformParent: {fileID: 1950684246}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.4999999
+      value: 0.29999998
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.4999999
+      value: 0.29999998
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.7299986
+      value: -2.4250002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.72
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.5649996
+      value: -1.6590002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7937,7 +7968,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: c76b38f2e7c310a4c971e63d8baec5d0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1789655620}
   m_SourcePrefab: {fileID: 100100000, guid: c76b38f2e7c310a4c971e63d8baec5d0, type: 3}
 --- !u!1 &514982490
 GameObject:
@@ -9284,6 +9318,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 599073017}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &609601709
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 609601710}
+  m_Layer: 0
+  m_Name: CupSlot_04
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &609601710
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 609601709}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.3, y: 0.46, z: -0.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 644299745}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &621887066
 GameObject:
   m_ObjectHideFlags: 0
@@ -9487,6 +9552,66 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 538916359}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &644299743
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 644299745}
+  - component: {fileID: 644299744}
+  m_Layer: 0
+  m_Name: TableDrinkArea_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &644299744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 644299743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cfafa0761776784ea9808d9ffb090fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cupSlots:
+  - {fileID: 1405166252}
+  - {fileID: 1736629791}
+  - {fileID: 2024057623}
+  - {fileID: 609601710}
+  - {fileID: 2085160915}
+  dropHeight: 0.18
+  dropDuration: 0.45
+  interval: 0.15
+  audioSource: {fileID: 0}
+  placeSound: {fileID: 0}
+--- !u!4 &644299745
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 644299743}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.0781796, y: 0.46341747, z: -1.9720001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1405166252}
+  - {fileID: 1736629791}
+  - {fileID: 2024057623}
+  - {fileID: 609601710}
+  - {fileID: 2085160915}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &653552713
 GameObject:
@@ -10105,6 +10230,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 691937165}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &698645299
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 698645300}
+  m_Layer: 0
+  m_Name: CupSlot_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &698645300
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 698645299}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.46, z: -0.39}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1413884643}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &699610045
 GameObject:
   m_ObjectHideFlags: 0
@@ -10689,13 +10845,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 434ea1de3740f6f4f98f62bf14eca859, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 348956496}
-    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 434ea1de3740f6f4f98f62bf14eca859, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 75477883}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 434ea1de3740f6f4f98f62bf14eca859, type: 3}
 --- !u!4 &742031124 stripped
@@ -17513,11 +17663,17 @@ MonoBehaviour:
   - {fileID: 636670312}
   - {fileID: 1149619176}
   - {fileID: 1878788193}
+  carriedDrinks: {fileID: 1789655620}
   brewingDuration: 3
   transferDuration: 1.2
   liquidRiseHeight: 0.08
   transferArcHeight: 0.2
-  largeCupScale: 1.08
+  blueMountainCup: {fileID: 1503954239}
+  geishaCup: {fileID: 1329430946}
+  konaCup: {fileID: 1025835077}
+  latteCup: {fileID: 1350721250}
+  smallCupHeight: 0.12
+  largeCupScale: 1.15
   audioSource: {fileID: 0}
   brewingSound: {fileID: 0}
   readySound: {fileID: 0}
@@ -19815,31 +19971,31 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2074803272}
+    m_TransformParent: {fileID: 1950684246}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.4999999
+      value: 0.29999998
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.4999999
+      value: 0.29999998
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.2850008
+      value: 2.423
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.72
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.414999
+      value: -2.2770002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalRotation.w
@@ -21133,6 +21289,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1399284381}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1405166251
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1405166252}
+  m_Layer: 0
+  m_Name: CupSlot_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1405166252
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1405166251}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.46, z: -0.39}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 644299745}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1406726086
 GameObject:
   m_ObjectHideFlags: 0
@@ -21514,6 +21701,66 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1409510902}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1413884641
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1413884643}
+  - component: {fileID: 1413884642}
+  m_Layer: 0
+  m_Name: TableDrinkArea_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1413884642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1413884641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cfafa0761776784ea9808d9ffb090fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cupSlots:
+  - {fileID: 698645300}
+  - {fileID: 2002668401}
+  - {fileID: 313158375}
+  - {fileID: 2034048529}
+  - {fileID: 1995770419}
+  dropHeight: 0.18
+  dropDuration: 0.45
+  interval: 0.15
+  audioSource: {fileID: 0}
+  placeSound: {fileID: 0}
+--- !u!4 &1413884643
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1413884641}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.06, y: 0.4634175, z: -1.97}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 698645300}
+  - {fileID: 2002668401}
+  - {fileID: 313158375}
+  - {fileID: 2034048529}
+  - {fileID: 1995770419}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1416386500
 GameObject:
   m_ObjectHideFlags: 0
@@ -22760,31 +23007,31 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2074803272}
+    m_TransformParent: {fileID: 1950684246}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.4999999
+      value: 0.29999998
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.4999999
+      value: 0.29999998
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.6450014
+      value: 3.6950002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.72
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.504999
+      value: -1.6590002
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b2d5ef1508fec48428b7803002d3bb34, type: 3}
       propertyPath: m_LocalRotation.w
@@ -23112,6 +23359,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1246459071940b64eb44cb194a3953af, type: 3}
   m_PrefabInstance: {fileID: 1506734102}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1516753069 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: c76b38f2e7c310a4c971e63d8baec5d0, type: 3}
+  m_PrefabInstance: {fileID: 512157448}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1533329825
 GameObject:
@@ -25614,6 +25866,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1731445784}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1736629790
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1736629791}
+  m_Layer: 0
+  m_Name: CupSlot_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1736629791
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1736629790}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.46, z: 0.4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 644299745}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1738335424
 GameObject:
   m_ObjectHideFlags: 0
@@ -26149,6 +26432,18 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c76b38f2e7c310a4c971e63d8baec5d0, type: 3}
   m_PrefabInstance: {fileID: 512157448}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1789655620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1516753069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53b6fbeda04b71141859eda46bb4dcb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1798946995
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27943,7 +28238,11 @@ Transform:
   - {fileID: 1115551238}
   - {fileID: 1590700359}
   - {fileID: 1926029408}
+  - {fileID: 348956496}
+  - {fileID: 75477883}
   - {fileID: 742031124}
+  - {fileID: 1487674450}
+  - {fileID: 1314643726}
   - {fileID: 2074803272}
   - {fileID: 1761651189}
   - {fileID: 1948482916}
@@ -27983,6 +28282,68 @@ Transform:
   - {fileID: 1222998171}
   - {fileID: 887497979}
   m_Father: {fileID: 1060320586}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1995770418
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1995770419}
+  m_Layer: 0
+  m_Name: CupSlot_05
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1995770419
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1995770418}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.3, y: 0.46, z: 0.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1413884643}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2002668400
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2002668401}
+  m_Layer: 0
+  m_Name: CupSlot_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2002668401
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2002668400}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.46, z: 0.4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1413884643}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2004959337
 PrefabInstance:
@@ -28237,6 +28598,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2017592979}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2024057622
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2024057623}
+  m_Layer: 0
+  m_Name: CupSlot_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2024057623
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2024057622}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.46, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 644299745}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2030657777
 GameObject:
   m_ObjectHideFlags: 0
@@ -28433,6 +28825,37 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.0388021, y: 0.91841424, z: 0.52369523}
   m_Center: {x: -0.00046771776, y: 0.45920712, z: -0.00009867551}
+--- !u!1 &2034048528
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2034048529}
+  m_Layer: 0
+  m_Name: CupSlot_04
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2034048529
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2034048528}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.3, y: 0.46, z: -0.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1413884643}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2034676834
 GameObject:
   m_ObjectHideFlags: 0
@@ -29133,13 +29556,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 434ea1de3740f6f4f98f62bf14eca859, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1487674450}
-    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 434ea1de3740f6f4f98f62bf14eca859, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1314643726}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 434ea1de3740f6f4f98f62bf14eca859, type: 3}
 --- !u!4 &2074803272 stripped
@@ -29423,6 +29840,37 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &2085160914
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2085160915}
+  m_Layer: 0
+  m_Name: CupSlot_05
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2085160915
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085160914}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.3, y: 0.46, z: 0.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 644299745}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2095945919
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30058,3 +30506,5 @@ SceneRoots:
   - {fileID: 1930554845}
   - {fileID: 854849395}
   - {fileID: 1126839139}
+  - {fileID: 644299745}
+  - {fileID: 1413884643}

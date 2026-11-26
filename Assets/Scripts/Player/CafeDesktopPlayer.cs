@@ -125,6 +125,62 @@ namespace VirtualCafe.Player
             }
             return best;
         }
+
+        private void PlaceCarriedDrinksOnTable(CafeSeat target)
+        {
+            // 使用制作组件绑定的同一个随身订单组件。
+            var production = FindObjectOfType<CafeMachineProduction>();
+            var carried = production
+                ? production.carriedDrinks
+                : FindObjectOfType<CafeCarriedDrinks>();
+
+            if (!carried || !carried.HasDrinks)
+                return;
+
+            CafeTableDrinkArea bestTable = null;
+            float bestDistance = 1.8f;
+
+            Vector3 forward = target.Forward;
+            forward.y = 0f;
+            forward.Normalize();
+
+            // 寻找座位前方最近的桌面放杯区域。
+            foreach (var area in FindObjectsOfType<CafeTableDrinkArea>())
+            {
+                if (!area.isActiveAndEnabled)
+                    continue;
+
+                Vector3 offset = area.transform.position - target.EyePosition;
+                offset.y = 0f;
+
+                float distance = offset.magnitude;
+
+                if (distance >= bestDistance)
+                    continue;
+
+                if (distance > 0.01f &&
+                    Vector3.Dot(forward, offset.normalized) <= 0.2f)
+                    continue;
+
+                bestTable = area;
+                bestDistance = distance;
+            }
+
+            if (!bestTable)
+            {
+                Debug.LogWarning(
+                    "座位前方没有找到桌面放杯区域，饮品仍保留在随身订单中。",
+                    target);
+                return;
+            }
+
+            if (!carried.TryPlaceOn(bestTable))
+            {
+                Debug.LogWarning(
+                    "桌面位置不足或正在放杯，饮品仍保留在随身订单中。",
+                    bestTable);
+            }
+        }
         public bool TrySit(CafeSeat target)
         {
             if (!target || target.Occupied || IsSeated || UiMode || Vector3.Distance(view.transform.position, target.EyePosition) > 2) return false;
@@ -139,7 +195,13 @@ namespace VirtualCafe.Player
             motor.enabled = false; seat = target; seat.Occupied = true;
             transform.position = target.EyePosition - Vector3.up * 1.65f;
             transform.rotation = Quaternion.LookRotation(target.Forward, Vector3.up);
-            pitch = 0; view.transform.localRotation = Quaternion.identity; verticalSpeed = 0; notice = "";
+            pitch = 0;
+            view.transform.localRotation = Quaternion.identity;
+            verticalSpeed = 0;
+            notice = "";
+
+            PlaceCarriedDrinksOnTable(target);
+
             return true;
         }
         public bool TryStand()
