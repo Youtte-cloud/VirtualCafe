@@ -569,9 +569,18 @@ namespace VirtualCafe.Recommendation
         }
         public void AcceptReception()
         {
-            if (mode != "prompt") return;
+            if (mode != "prompt")
+                return;
+
+            // 随身满五杯时，直接提示，不进入点单流程。
+            if (BlockOrderWhenCarryFull())
+                return;
+
             ShowWelcome();
-            if (player) player.SetUiMode(true);
+
+            if (player)
+                player.SetUiMode(true);
+
             SetPointerInteraction(true);
         }
         public void OpenRecommendation()
@@ -613,7 +622,7 @@ namespace VirtualCafe.Recommendation
                 "容量已满，请放杯后再点单。",
                 "持てる上限に達しています。飲み物をテーブルに置いてから、もう一度ご注文ください。");
 
-            Speak(message, ShowWelcomeChoices);
+            Speak(message, EndPlayerInteraction);
 
             return true;
         }
