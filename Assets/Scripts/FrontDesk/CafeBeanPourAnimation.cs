@@ -27,6 +27,10 @@ public sealed class CafeBeanPourAnimation : MonoBehaviour
     [Header("Flying beans")]
     public Material beanMaterial;
 
+    [Header("Bean pouring sound")]
+    public AudioSource beansAudio;
+    public AudioClip beansPourSound;
+
     [Range(8, 80)]
     public int beanCount = 32;
 
@@ -267,6 +271,13 @@ public sealed class CafeBeanPourAnimation : MonoBehaviour
 
         particleRoot = new GameObject("PouringCoffeeBeans");
 
+        if (beansAudio && beansPourSound)
+        {
+            beansAudio.clip = beansPourSound;
+            beansAudio.loop = true;
+            beansAudio.Play();
+        }
+
         int count = Mathf.Clamp(beanCount, 8, 80);
         var particles = new Transform[count];
         var starts = new Vector3[count];
@@ -415,6 +426,12 @@ public sealed class CafeBeanPourAnimation : MonoBehaviour
 
     private void ClearParticles()
     {
+        if (beansAudio)
+        {
+            beansAudio.Stop();
+            beansAudio.loop = false;
+        }
+
         if (!particleRoot)
             return;
 

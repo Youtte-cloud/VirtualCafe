@@ -15,6 +15,10 @@ public sealed class CafeGroundsPourAnimation : MonoBehaviour
     public float tiltDuration = 0.5f;
     public float tiltAngle = 70f;
 
+    [Header("Grounds sound")]
+    public AudioSource groundsAudio;
+    public AudioClip groundsSound;
+
     [Tooltip("接粉杯停在落粉点外侧的距离，单位为米。")]
     public float approachDistance = 0.14f;
 
@@ -188,6 +192,16 @@ public sealed class CafeGroundsPourAnimation : MonoBehaviour
         }
     }
 
+    private void PlayGroundsSound()
+    {
+        if (!groundsAudio || !groundsSound)
+            return;
+
+        groundsAudio.clip = groundsSound;
+        groundsAudio.loop = true;
+        groundsAudio.Play();
+    }
+
     private bool CanContinue(int currentVersion)
     {
         return currentVersion == version &&
@@ -244,6 +258,7 @@ public sealed class CafeGroundsPourAnimation : MonoBehaviour
         ClearParticles();
 
         particleRoot = new GameObject("PouringCoffeeGrounds");
+        PlayGroundsSound();
 
         int count = Mathf.Clamp(particleCount, 8, 80);
         var particles = new Transform[count];
@@ -367,6 +382,12 @@ public sealed class CafeGroundsPourAnimation : MonoBehaviour
 
     private void ClearParticles()
     {
+        if (groundsAudio)
+        {
+            groundsAudio.Stop();
+            groundsAudio.loop = false;
+        }
+
         if (!particleRoot)
             return;
 

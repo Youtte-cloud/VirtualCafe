@@ -10,6 +10,10 @@ public sealed class CafeGrinderAnimation : MonoBehaviour
     [Min(0.1f)]
     public float duration = 2f;
 
+    [Header("Grinding sound")]
+    public AudioSource grindingAudio;
+    public AudioClip grindingSound;
+
     [Min(1)]
     public int turns = 3;
 
@@ -29,6 +33,12 @@ public sealed class CafeGrinderAnimation : MonoBehaviour
 
         try
         {
+            if (grindingAudio && grindingSound)
+            {
+                grindingAudio.clip = grindingSound;
+                grindingAudio.loop = true;
+                grindingAudio.Play();
+            }
             float elapsed = 0f;
             float seconds = Mathf.Max(0.1f, duration);
 
@@ -59,6 +69,12 @@ public sealed class CafeGrinderAnimation : MonoBehaviour
 
     private void RestoreRotation()
     {
+        if (grindingAudio)
+        {
+            grindingAudio.Stop();
+            grindingAudio.loop = false;
+        }
+
         if (activePivot)
             activePivot.localRotation = startRotation;
 

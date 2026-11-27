@@ -18,6 +18,15 @@ public sealed class CafeGroundsTransferAnimation : MonoBehaviour
     [Header("Flying grounds")]
     public Material groundsMaterial;
 
+    [Header("Drawer sounds")]
+    public AudioSource drawerAudio;
+    public AudioClip drawerOpenSound;
+    public AudioClip drawerCloseSound;
+
+    [Header("Grounds sound")]
+    public AudioSource groundsAudio;
+    public AudioClip groundsSound;
+
     [Range(8, 80)]
     public int particleCount = 36;
 
@@ -39,6 +48,26 @@ public sealed class CafeGroundsTransferAnimation : MonoBehaviour
 
     private GameObject particleRoot;
     private int version;
+
+    private void PlayGroundsSound()
+    {
+        if (!groundsAudio || !groundsSound)
+            return;
+
+        groundsAudio.clip = groundsSound;
+        groundsAudio.loop = true;
+        groundsAudio.Play();
+    }
+
+    private void PlayDrawerSound(AudioClip clip)
+    {
+        if (!drawerAudio || !clip)
+            return;
+
+        drawerAudio.Stop();
+        drawerAudio.loop = false;
+        drawerAudio.PlayOneShot(clip);
+    }
 
     private bool Initialize()
     {
@@ -81,6 +110,8 @@ public sealed class CafeGroundsTransferAnimation : MonoBehaviour
             SetFill(0f);
 
             // 水平拉出抽屉。
+            PlayDrawerSound(drawerOpenSound);
+
             yield return MoveDrawer(
                 closedDrawerPosition,
                 closedDrawerPosition + drawerOpenOffset,
@@ -106,6 +137,8 @@ public sealed class CafeGroundsTransferAnimation : MonoBehaviour
                 yield break;
 
             // 接粉完成后关闭抽屉。
+            PlayDrawerSound(drawerCloseSound);
+
             yield return MoveDrawer(
                 closedDrawerPosition + drawerOpenOffset,
                 closedDrawerPosition,
@@ -175,6 +208,7 @@ public sealed class CafeGroundsTransferAnimation : MonoBehaviour
         ClearParticles();
 
         particleRoot = new GameObject("FlyingCoffeeGrounds");
+        PlayGroundsSound();
 
         int count = Mathf.Clamp(particleCount, 8, 80);
 
@@ -305,6 +339,12 @@ public sealed class CafeGroundsTransferAnimation : MonoBehaviour
 
     private void ClearParticles()
     {
+        if (groundsAudio)
+        {
+            groundsAudio.Stop();
+            groundsAudio.loop = false;
+        }
+
         if (!particleRoot)
             return;
 

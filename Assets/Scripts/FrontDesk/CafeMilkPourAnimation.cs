@@ -20,6 +20,10 @@ public sealed class CafeMilkPourAnimation : MonoBehaviour
     public float streamWidth = 0.006f;
     public float streamArcHeight = 0.015f;
 
+    [Header("Milk pouring sound")]
+    public AudioSource milkAudio;
+    public AudioClip milkPourSound;
+
     [Range(8, 40)]
     public int streamSegments = 20;
 
@@ -143,6 +147,13 @@ public sealed class CafeMilkPourAnimation : MonoBehaviour
                 yield break;
 
             EnsureStream();
+
+            if (milkAudio && milkPourSound)
+            {
+                milkAudio.clip = milkPourSound;
+                milkAudio.loop = true;
+                milkAudio.Play();
+            }
 
             float elapsed = 0f;
             float seconds = Mathf.Max(0.2f, pourDuration);
@@ -374,6 +385,12 @@ public sealed class CafeMilkPourAnimation : MonoBehaviour
     {
         if (milkStream)
             milkStream.enabled = false;
+
+        if (milkAudio)
+        {
+            milkAudio.Stop();
+            milkAudio.loop = false;
+        }
     }
 
     private void RestorePitcher()
