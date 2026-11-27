@@ -585,7 +585,12 @@ namespace VirtualCafe.Recommendation
         }
         public void OpenOrder()
         {
-            if (purchasing || KeepPendingReceiptVisible()) return;
+            if (purchasing || KeepPendingReceiptVisible())
+                return;
+
+            if (BlockOrderWhenCarryFull())
+                return;
+
             hasChosenDrink = false; browsingMenu = true;
             StopVoice();
             beanChosen = cupChosen = milkChosen = true;
@@ -594,8 +599,29 @@ namespace VirtualCafe.Recommendation
             mode = "order"; recommendation.CancelSession(); reception.OpenOrder(); purchased = false; currentReceipt = null;
             Speak("Take your time. Which coffee would you like?", ShowDrinkMenu);
         }
+        private bool BlockOrderWhenCarryFull()
+        {
+            var carried = machineProduction
+                ? machineProduction.carriedDrinks
+                : null;
+
+            if (!carried || carried.RemainingCapacity > 0)
+                return false;
+
+            string message = CartText(
+                "You have reached the carrying limit. Please place your drinks on a table before ordering again.",
+                "容量已满，请放杯后再点单。",
+                "持てる上限に達しています。飲み物をテーブルに置いてから、もう一度ご注文ください。");
+
+            Speak(message, ShowWelcomeChoices);
+
+            return true;
+        }
         private void ShowDrinkMenu()
         {
+            if (BlockOrderWhenCarryFull())
+                return;
+
             mode = "order"; browsingMenu = true;
             var items = CafeRuntimeServices.Menu.GetMenu().items;
             ActionWindow("Choose your coffee", 215 + ((items.Length + 1) / 2) * 100, () => { (menuReturn ?? ShowWelcomeChoices)(); });

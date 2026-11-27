@@ -128,11 +128,17 @@ namespace VirtualCafe.Player
 
         private void PlaceCarriedDrinksOnTable(CafeSeat target)
         {
-            // 使用制作组件绑定的同一个随身订单组件。
+            if (!target)
+                return;
+
             var production = FindObjectOfType<CafeMachineProduction>();
+
             var carried = production
                 ? production.carriedDrinks
-                : FindObjectOfType<CafeCarriedDrinks>();
+                : null;
+
+            if (!carried)
+                carried = FindObjectOfType<CafeCarriedDrinks>();
 
             if (!carried || !carried.HasDrinks)
                 return;
@@ -144,13 +150,14 @@ namespace VirtualCafe.Player
             forward.y = 0f;
             forward.Normalize();
 
-            // 寻找座位前方最近的桌面放杯区域。
             foreach (var area in FindObjectsOfType<CafeTableDrinkArea>())
             {
                 if (!area.isActiveAndEnabled)
                     continue;
 
-                Vector3 offset = area.transform.position - target.EyePosition;
+                Vector3 offset =
+                    area.transform.position - target.EyePosition;
+
                 offset.y = 0f;
 
                 float distance = offset.magnitude;
@@ -160,7 +167,9 @@ namespace VirtualCafe.Player
 
                 if (distance > 0.01f &&
                     Vector3.Dot(forward, offset.normalized) <= 0.2f)
+                {
                     continue;
+                }
 
                 bestTable = area;
                 bestDistance = distance;
@@ -168,17 +177,23 @@ namespace VirtualCafe.Player
 
             if (!bestTable)
             {
-                Debug.LogWarning(
-                    "座位前方没有找到桌面放杯区域，饮品仍保留在随身订单中。",
-                    target);
+                CafeCapacityNotice.Show(
+                    "No table placement area was found. Your drinks remain in your carried orders.",
+                    "未找到桌面放杯位置，饮品仍保留在随身订单中。",
+                    "飲み物を置く場所が見つかりません。注文はそのまま持っています。");
+
                 return;
             }
 
-            if (!carried.TryPlaceOn(bestTable))
+            bool placed = carried.TryPlaceOn(bestTable);
+
+            // 完全放不下，或只放下部分订单、仍有订单随身携带。
+            if (!placed || carried.HasDrinks)
             {
-                Debug.LogWarning(
-                    "桌面位置不足或正在放杯，饮品仍保留在随身订单中。",
-                    bestTable);
+                CafeCapacityNotice.Show(
+                    "There is not enough space on the table. The remaining drinks stay in your carried orders.",
+                    "桌子位置不足，饮品仍保留在随身订单中。",
+                    "テーブルの空きが足りません。残りの飲み物はそのまま持っています。");
             }
         }
         public bool TrySit(CafeSeat target)

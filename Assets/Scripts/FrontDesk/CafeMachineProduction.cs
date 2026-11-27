@@ -171,12 +171,16 @@ public sealed class CafeMachineProduction : MonoBehaviour
             return false;
         }
 
-        if (carriedDrinks.HasDrinks)
+        int remaining = carriedDrinks.RemainingCapacity;
+
+        if (servings > remaining)
         {
             reason = L(
-                "Please place your previous order on a table first.",
-                "请先坐下，将上一笔订单放到桌上。",
-                "先に座って、前の注文をテーブルに置いてください。");
+                "You are carrying {0} cups. You can order up to {1} more. Place drinks on a table to free up space.",
+                "你已随身携带 {0} 杯，最多还能点 {1} 杯。可先将饮品放到桌上腾出容量。",
+                "現在 {0} 杯持っています。追加注文は {1} 杯までです。テーブルに置くと空きができます。",
+                carriedDrinks.CarriedCupCount,
+                remaining);
 
             return false;
         }
@@ -558,9 +562,9 @@ public sealed class CafeMachineProduction : MonoBehaviour
                         }
 
                         SetMessage(L(
-                            "Please place your previous order on a table first.",
-                            "请先坐下，将上一笔订单放到桌上。",
-                            "先に座って、前の注文をテーブルに置いてください。"));
+                            "Unable to collect this order. Please try again.",
+                            "暂时无法领取这笔订单，请重试。",
+                            "注文を受け取れませんでした。もう一度お試しください。"));
                     }
                 }
 

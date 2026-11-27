@@ -133,26 +133,45 @@ namespace VirtualCafe.Recommendation
             ShowCart();
         }
 
-        private bool ValidateCart(IReadOnlyList<MenuSelection> entries, out int cents, out int count, out string reason)
+        private bool ValidateCart(
+            IReadOnlyList<MenuSelection> entries,
+            out int cents,
+            out int count,
+            out string reason)
         {
             cents = count = 0;
-            if (!CafeRuntimeServices.Menu.TryGetOrderQuote(entries, out cents, out count, out reason))
+
+            if (!CafeRuntimeServices.Menu.TryGetOrderQuote(
+                entries, out cents, out count, out reason))
             {
                 reason = OrderFailureMessage(reason);
                 return false;
             }
+
             if (!machineProduction)
             {
-                reason = CartText("Production is unavailable. Please try later.", "暂时无法制作，请稍后再试。", "現在製作できません。しばらくお待ちください。");
+                reason = CartText(
+                    "Production is unavailable. Please try later.",
+                    "暂时无法制作，请稍后再试。",
+                    "現在製作できません。しばらくお待ちください。");
+
                 return false;
             }
+
+            // 保留制作组件返回的具体原因，包括随身容量不足。
             if (!machineProduction.CanAcceptOrder(count, out reason))
             {
-                reason = count > machineProduction.OrderCapacity
-                    ? CartText("Production capacity reached. Reduce the quantity.", "制作容量不足，请减少杯数。", "製作上限です。数量を減らしてください。")
-                    : CartText("Production is unavailable. Please try later.", "暂时无法制作，请稍后再试。", "現在製作できません。しばらくお待ちください。");
+                if (string.IsNullOrEmpty(reason))
+                {
+                    reason = CartText(
+                        "Production is unavailable. Please try later.",
+                        "暂时无法制作，请稍后再试。",
+                        "現在製作できません。しばらくお待ちください。");
+                }
+
                 return false;
             }
+
             return true;
         }
 
