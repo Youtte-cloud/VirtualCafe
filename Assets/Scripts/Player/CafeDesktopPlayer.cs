@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using VirtualCafe.Recommendation;
@@ -15,6 +15,7 @@ namespace VirtualCafe.Player
         private CharacterController motor;
         private CafeFrontDeskUI terminal;
         private CafeSeat seat, nearbySeat;
+        private CafeTableDrinkArea seatedDrinkTable;
         private Vector3 entryPosition;
         private float pitch, verticalSpeed;
         private int resumeLookAfterFrame;
@@ -80,6 +81,16 @@ namespace VirtualCafe.Player
                 }
             }
             if (UiMode) return;
+            if (IsSeated && seatedDrinkTable && seatedDrinkTable.IsDrinking) return;
+            if (IsSeated && seatedDrinkTable && view)
+            {
+                bool overUi = EventSystem.current && EventSystem.current.IsPointerOverGameObject();
+                seatedDrinkTable.UpdateDrinkPointer(view.ScreenPointToRay(Input.mousePosition), !overUi && Input.GetMouseButtonDown(0));
+            }
+            if (IsSeated && Input.GetKeyDown(KeyCode.G) && seatedDrinkTable)
+            {
+                if (seatedDrinkTable.TryDrink(view)) { UpdateControlsHint(); return; }
+            }
             // Free look follows ordinary mouse movement, while the pointer remains visible.
             // Do not rotate on the same click that selects a world object or closes a window.
             if (Time.frameCount > resumeLookAfterFrame && !Input.GetMouseButtonDown(0))
@@ -126,23 +137,8 @@ namespace VirtualCafe.Player
             return best;
         }
 
-        private void PlaceCarriedDrinksOnTable(CafeSeat target)
+        private CafeTableDrinkArea FindTableForSeat(CafeSeat target)
         {
-            if (!target)
-                return;
-
-            var production = FindObjectOfType<CafeMachineProduction>();
-
-            var carried = production
-                ? production.carriedDrinks
-                : null;
-
-            if (!carried)
-                carried = FindObjectOfType<CafeCarriedDrinks>();
-
-            if (!carried || !carried.HasDrinks)
-                return;
-
             CafeTableDrinkArea bestTable = null;
             float bestDistance = 1.8f;
 
@@ -174,6 +170,27 @@ namespace VirtualCafe.Player
                 bestTable = area;
                 bestDistance = distance;
             }
+
+            return bestTable;
+        }
+        private void PlaceCarriedDrinksOnTable(CafeSeat target)
+        {
+            if (!target)
+                return;
+
+            var production = FindObjectOfType<CafeMachineProduction>();
+
+            var carried = production
+                ? production.carriedDrinks
+                : null;
+
+            if (!carried)
+                carried = FindObjectOfType<CafeCarriedDrinks>();
+
+            if (!carried || !carried.HasDrinks)
+                return;
+
+            var bestTable = seatedDrinkTable;
 
             if (!bestTable)
             {
@@ -215,13 +232,15 @@ namespace VirtualCafe.Player
             verticalSpeed = 0;
             notice = "";
 
+            seatedDrinkTable = FindTableForSeat(target);
+            if (seatedDrinkTable) seatedDrinkTable.ClearDrinkSelection();
             PlaceCarriedDrinksOnTable(target);
 
             return true;
         }
         public bool TryStand()
         {
-            if (!IsSeated) return false;
+            if (!IsSeated || (seatedDrinkTable && seatedDrinkTable.IsDrinking)) return false;
             Vector3 center = seat.EyePosition; center.y = entryPosition.y;
             Vector3 right = Vector3.Cross(Vector3.up, seat.Forward);
             Vector3[] choices = { entryPosition, center + seat.Forward * .9f, center + right * .9f, center - right * .9f, center - seat.Forward * .9f };
@@ -231,7 +250,7 @@ namespace VirtualCafe.Player
                 // A safe standing point also needs a floor, not empty space beyond the room.
                 if (!Physics.Raycast(candidate + Vector3.up * .3f, Vector3.down, .65f, ~0, QueryTriggerInteraction.Ignore)) continue;
                 transform.position = candidate; seat.Occupied = false; seat = null;
-                motor.enabled = true; verticalSpeed = 0; notice = ""; return true;
+                if (seatedDrinkTable) seatedDrinkTable.ClearDrinkSelection(); seatedDrinkTable = null; motor.enabled = true; verticalSpeed = 0; notice = ""; return true;
             }
             notice = "旁边暂时没有足够的起身空间，请稍后再试。"; return false;
         }
@@ -246,6 +265,8 @@ namespace VirtualCafe.Player
         {
             if (controlsCanvas) controlsCanvas.enabled = false;
             ReleasePointer();
+            if (seatedDrinkTable) seatedDrinkTable.CancelDrinking();
+            seatedDrinkTable = null;
             if (seat) { seat.Occupied = false; seat = null; }
         }
         private void OnDestroy() { if (controlsCanvas) Destroy(controlsCanvas.gameObject); if (font) Destroy(font); }
@@ -284,6 +305,15 @@ namespace VirtualCafe.Player
                 hint = "F: talk / WASD: move / Mouse: look";
             if (!UiMode && terminal && !string.IsNullOrEmpty(terminal.HoveredCupName))
                 hint = CafeUiLocalization.Format("Click: learn about {0}", "点击：了解{0}", "クリック：{0}について聞く", terminal.HoveredCupName);
+            if (!UiMode && IsSeated && seatedDrinkTable)
+            {
+                if (seatedDrinkTable.IsDrinking)
+                    hint = CafeUiLocalization.Format("Drinking coffee... {0}%", "正在饮用咖啡……{0}%", "コーヒーを飲んでいます… {0}%", Mathf.RoundToInt(seatedDrinkTable.DrinkProgress * 100));
+                else if (seatedDrinkTable.CanDrink)
+                    hint = CafeUiLocalization.Format("{0} / G: drink / E: stand up", "{0} / G：饮用 / E：起身", "{0} / G：飲む / E：立つ", seatedDrinkTable.SelectedDrinkName);
+                else if (!seatedDrinkTable.IsPlacing && seatedDrinkTable.DrinkCount > 0)
+                    hint = CafeUiLocalization.Format("Click a cup, then press G / E: stand up", "点击桌上咖啡选中，再按G饮用 / E：起身", "カップをクリックしてGで飲む / E：立つ");
+            }
             if (terminal && terminal.IsPreparingOrder) hint = "Preparing your drink... Please wait.";
             controlsText.text = CafeUiLocalization.Text(string.IsNullOrEmpty(notice) ? hint : "Not enough room to stand. Please try again.");
         }

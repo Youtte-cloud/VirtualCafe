@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using UnityEngine;
 
 public sealed class CafeCarriedDrinks : MonoBehaviour
@@ -18,6 +18,15 @@ public sealed class CafeCarriedDrinks : MonoBehaviour
     public bool HasDrinks => orders.Count > 0;
 
     public const int MaxCarriedCups = 5;
+    // Includes cups carried by the player AND cups already placed on tables.
+    private readonly HashSet<GameObject> undrunkCups = new HashSet<GameObject>();
+    public int UndrunkCupCount => undrunkCups.Count;
+
+    public bool MarkDrinkFinished(GameObject cup)
+    {
+        return undrunkCups.Remove(cup);
+    }
+
 
     public int CarriedCupCount
     {
@@ -33,7 +42,7 @@ public sealed class CafeCarriedDrinks : MonoBehaviour
     }
 
     public int RemainingCapacity =>
-        Mathf.Max(0, MaxCarriedCups - CarriedCupCount);
+        Mathf.Max(0, MaxCarriedCups - UndrunkCupCount);
 
     public string PickupNumber { get; private set; }
 
@@ -50,7 +59,7 @@ public sealed class CafeCarriedDrinks : MonoBehaviour
             return false;
         }
 
-        // ¼ì²éÊÇ·ñÖØ¸´ÁìÈ¡ÁËÍ¬Ò»¸ö±­×Ó¡£
+        // æ£€æŸ¥æ˜¯å¦é‡å¤é¢†å–äº†åŒä¸€ä¸ªæ¯å­ã€‚
         var uniqueCups = new HashSet<GameObject>();
 
         foreach (var order in orders)
@@ -64,7 +73,7 @@ public sealed class CafeCarriedDrinks : MonoBehaviour
 
         foreach (var cup in cups)
         {
-            if (!cup || !uniqueCups.Add(cup))
+            if (!cup || undrunkCups.Contains(cup) || !uniqueCups.Add(cup))
                 return false;
         }
 
@@ -72,6 +81,7 @@ public sealed class CafeCarriedDrinks : MonoBehaviour
 
         foreach (var cup in receivedCups)
         {
+            undrunkCups.Add(cup);
             cup.SetActive(false);
             cup.transform.SetParent(transform, true);
         }
@@ -98,7 +108,7 @@ public sealed class CafeCarriedDrinks : MonoBehaviour
 
         var cupsToPlace = new List<GameObject>();
 
-        // °´ÁìÈ¡Ë³ĞòÑ¡Ôñ×ÀÃæÈİµÃÏÂµÄÍêÕû¶©µ¥¡£
+        // æŒ‰é¢†å–é¡ºåºé€‰æ‹©æ¡Œé¢å®¹å¾—ä¸‹çš„å®Œæ•´è®¢å•ã€‚
         foreach (var order in orders)
         {
             if (order.cups.Length > available)
@@ -112,10 +122,10 @@ public sealed class CafeCarriedDrinks : MonoBehaviour
         if (orderCount == 0)
             return false;
 
-        if (!table.TryPlace(cupsToPlace.ToArray()))
+        if (!table.TryPlace(cupsToPlace.ToArray(), this))
             return false;
 
-        // ³É¹¦½»¸ø×ÀÃæºó£¬²ÅÒÆ³ıËæÉí¼ÇÂ¼¡£
+        // æˆåŠŸäº¤ç»™æ¡Œé¢åï¼Œæ‰ç§»é™¤éšèº«è®°å½•ã€‚
         orders.RemoveRange(0, orderCount);
         UpdatePickupNumber();
 
@@ -141,5 +151,6 @@ public sealed class CafeCarriedDrinks : MonoBehaviour
         }
 
         orders.Clear();
+        undrunkCups.Clear();
     }
 }

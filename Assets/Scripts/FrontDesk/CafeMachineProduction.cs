@@ -90,6 +90,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
     {
         public int size;
         public string label;
+        public string drinkName;
         public string beanId;
         public bool isLatte;
     }
@@ -176,10 +177,10 @@ public sealed class CafeMachineProduction : MonoBehaviour
         if (servings > remaining)
         {
             reason = L(
-                "You are carrying {0} cups. You can order up to {1} more. Place drinks on a table to free up space.",
-                "你已随身携带 {0} 杯，最多还能点 {1} 杯。可先将饮品放到桌上腾出容量。",
-                "現在 {0} 杯持っています。追加注文は {1} 杯までです。テーブルに置くと空きができます。",
-                carriedDrinks.CarriedCupCount,
+                "You have {0} unfinished drinks. You can order up to {1} more. Finish a drink to free up space.",
+                "你还有 {0} 杯未饮用，最多还能点 {1} 杯。喝完一杯后可释放一个名额。",
+                "まだ飲んでいない飲み物が {0} 杯あります。追加注文は {1} 杯までです。飲み終えると空きができます。",
+                carriedDrinks.UndrunkCupCount,
                 remaining);
 
             return false;
@@ -315,6 +316,7 @@ public sealed class CafeMachineProduction : MonoBehaviour
                 {
                     size = selection.CupSizeMl,
                     label = label,
+                    drinkName = item.name,
                     beanId = bean,
                     isLatte = isLatte
                 });
@@ -642,6 +644,10 @@ public sealed class CafeMachineProduction : MonoBehaviour
             pickupNumber +
             "_" +
             (finishedCups.Count + 1));
+
+        var drinkLabel = root.AddComponent<CafeDrinkLabel>();
+        drinkLabel.drinkName = string.IsNullOrEmpty(spec.drinkName) ? (spec.isLatte ? "Latte" : "Black coffee") : spec.drinkName;
+        drinkLabel.cupSizeMl = spec.size;
 
         Transform template = GetCupTemplate(spec);
         Transform visual = CopyPart(template, root.transform);

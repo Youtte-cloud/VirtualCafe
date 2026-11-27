@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -618,9 +618,9 @@ namespace VirtualCafe.Recommendation
                 return false;
 
             string message = CartText(
-                "You have reached the carrying limit. Please place your drinks on a table before ordering again.",
-                "容量已满，请放杯后再点单。",
-                "持てる上限に達しています。飲み物をテーブルに置いてから、もう一度ご注文ください。");
+                "You have 5 unfinished drinks. Please finish a drink before ordering again.",
+                "你已有5杯未饮用的咖啡，请喝完一杯后再点单。",
+                "まだ飲んでいない飲み物が5杯あります。1杯飲み終えてから、もう一度ご注文ください。");
 
             Speak(message, EndPlayerInteraction);
 

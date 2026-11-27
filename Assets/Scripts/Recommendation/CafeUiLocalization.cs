@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.RegularExpressions;
 
 namespace VirtualCafe.Recommendation
@@ -9,6 +9,7 @@ namespace VirtualCafe.Recommendation
         public static int LanguageIndex { get; set; } = 1;
         public static string LanguageCode => LanguageIndex == 0 ? "zh-CN" : LanguageIndex == 2 ? "ja-JP" : "en-US";
         private static readonly string[,] Phrases = {
+            { "G: drink coffee / E: stand up", "G：饮用咖啡 / E：起身", "G：コーヒーを飲む / E：立つ" },
             { "Your drink is ready! Moving it to the pickup counter...", "咖啡制作完成，正在送往取餐区……", "コーヒーができました！受取カウンターへお運びしています…" },
             { "Your drink is at the pickup counter.", "咖啡已制作完成，请到取餐区领取。", "コーヒーができました。受取カウンターへお越しください。" },
             { "Press E to pick up your drink.", "咖啡已制作完成，按 E 领取。", "コーヒーができました。E キーでお受け取りください。" },
